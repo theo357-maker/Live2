@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>👨‍🏫 Professeur — Direct</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#fff;padding:16px}
@@ -11,21 +11,27 @@ h1{margin:0 0 8px;font-size:24px}.muted{color:#94a3b8}.row{display:flex;gap:10px
 input,button{font:inherit;border-radius:10px;padding:12px 14px}input{flex:1;min-width:220px;background:#0b1220;color:#fff;border:1px solid #475569}
 button{border:0;font-weight:700;cursor:pointer;background:#16a34a;color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
 .danger{background:#dc2626}.blue{background:#2563eb}.gray{background:#475569}.green{background:#16a34a}
-.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}video{width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;object-fit:cover}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}video{width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;object-fit:cover;display:block}
 .status{padding:12px;border-radius:10px;background:#243044;color:#cbd5e1;margin-top:12px}.ok{background:#12351f;color:#86efac}.err{background:#401b1b;color:#fca5a5}.wait{background:#3b2b0a;color:#fde68a}
 .student{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px;border-bottom:1px solid #334155}.student:last-child{border:0}.name{font-weight:700}.small{font-size:12px;color:#94a3b8}
 .login{max-width:430px;margin:80px auto;text-align:center}.empty{padding:25px;text-align:center;color:#64748b}
+.badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#243044;font-size:12px}
 @media(max-width:800px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div id="login" class="card login">
-<h1>👨‍🏫 Espace Professeur</h1><p class="muted">Connectez-vous pour lancer le direct.</p>
-<button id="loginBtn">🔑 Connexion Google</button><div id="loginError"></div>
+<h1>👨‍🏫 Espace Professeur</h1>
+<p class="muted">Connectez-vous pour lancer le direct.</p>
+<button id="loginBtn">🔑 Connexion Google</button>
+<div id="loginError" class="small"></div>
 </div>
 
 <div id="app" class="wrap" style="display:none">
-<div class="card"><h1>👨‍🏫 Direct de la classe</h1><div id="user" class="muted"></div></div>
+<div class="card">
+<h1>👨‍🏫 Direct de la classe</h1>
+<div id="user" class="muted"></div>
+</div>
 
 <div class="card">
 <div class="row">
@@ -41,12 +47,13 @@ button{border:0;font-weight:700;cursor:pointer;background:#16a34a;color:#fff}but
 <div class="card">
 <video id="localVideo" autoplay playsinline muted></video>
 <div class="row" style="margin-top:10px">
-<button id="cameraBtn" class="gray">📷 Caméra</button>
-<button id="micBtn" class="gray">🎤 Micro</button>
+<button id="cameraBtn" class="gray" disabled>📷 Caméra</button>
+<button id="micBtn" class="gray" disabled>🎤 Micro</button>
 </div>
 </div>
 <div class="card">
-<h3>👥 Étudiants</h3><div id="students"><div class="empty">Aucun étudiant.</div></div>
+<h3>👥 Étudiants</h3>
+<div id="students"><div class="empty">Aucun étudiant.</div></div>
 </div>
 </div>
 </div>
@@ -64,100 +71,151 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore();
 
-const RTC_CONFIG={iceServers:[
- {urls:"stun:stun.l.google.com:19302"},
- {urls:"stun:stun1.l.google.com:19302"},
- {urls:"turn:openrelay.metered.ca:80",username:"openrelayproject",credential:"openrelayproject"},
- {urls:"turn:openrelay.metered.ca:443",username:"openrelayproject",credential:"openrelayproject"}
-]};
+const RTC_CONFIG={
+ iceCandidatePoolSize:10,
+ bundlePolicy:"max-bundle",
+ rtcpMuxPolicy:"require",
+ iceServers:[
+  {urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"]},
+  {urls:"turn:openrelay.metered.ca:80",username:"openrelayproject",credential:"openrelayproject"},
+  {urls:"turn:openrelay.metered.ca:443",username:"openrelayproject",credential:"openrelayproject"},
+  {urls:"turn:openrelay.metered.ca:443?transport=tcp",username:"openrelayproject",credential:"openrelayproject"}
+ ]
+};
 
 let stream=null,roomId=null,roomUnsub=null,studentsUnsub=null;
-let pcs=new Map(),studentListeners=new Map(),auto=false,isLive=false;
+let pcs=new Map(),studentUnsubs=new Map(),processing=new Set();
+let auto=false,isLive=false,stopping=false;
 
 const $=id=>document.getElementById(id);
 function status(m,t=""){ $("status").textContent=m;$("status").className="status "+t; }
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 
 async function startCamera(){
  if(stream)return;
- if(!navigator.mediaDevices?.getUserMedia)throw new Error("La caméra n'est pas disponible. Utilisez HTTPS.");
+ if(!navigator.mediaDevices?.getUserMedia)throw new Error("Caméra indisponible. Ouvrez cette page en HTTPS.");
  stream=await navigator.mediaDevices.getUserMedia({
   video:{width:{ideal:1280},height:{ideal:720},facingMode:"user"},
   audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
  });
  $("localVideo").srcObject=stream;
+ $("cameraBtn").disabled=false;$("micBtn").disabled=false;
 }
 
-function closeStudent(uid){
- const pc=pcs.get(uid);if(pc){try{pc.close()}catch(e){}pcs.delete(uid);}
- const ls=studentListeners.get(uid)||[];ls.forEach(fn=>{try{fn()}catch(e){}});
- studentListeners.delete(uid);
+function closeStudent(uid,deleteDoc=false){
+ const pc=pcs.get(uid);
+ if(pc){try{pc.onicecandidate=null;pc.onconnectionstatechange=null;pc.close()}catch(e){}}
+ pcs.delete(uid);
+ const ls=studentUnsubs.get(uid)||[];
+ ls.forEach(fn=>{try{fn()}catch(e){}});
+ studentUnsubs.delete(uid);
+ if(deleteDoc && roomId){
+  db.collection("salles").doc(roomId).collection("students").doc(uid).delete().catch(()=>{});
+ }
 }
 
-async function processStudent(uid,data){
- if(!isLive||!data?.offer?.sdp)return;
- if(data.rejected===true||data.approved!==true)return;
- if(pcs.has(uid))return;
+async function createAnswerForStudent(uid,data){
+ if(!isLive||stopping||!data?.offer?.sdp||data.rejected===true||data.approved!==true)return;
+ if(pcs.has(uid)||processing.has(uid))return;
+ processing.add(uid);
 
  const ref=db.collection("salles").doc(roomId).collection("students").doc(uid);
- const pc=new RTCPeerConnection(RTC_CONFIG);pcs.set(uid,pc);
- const queued=[];let remoteReady=false;
+ const pc=new RTCPeerConnection(RTC_CONFIG);
+ pcs.set(uid,pc);
+ let remoteDescriptionReady=false;
+ const queued=[];
+ const seen=new Set();
 
+ if(!stream){processing.delete(uid);closeStudent(uid);return;}
  stream.getTracks().forEach(track=>pc.addTrack(track,stream));
 
- pc.onicecandidate=e=>{
-  if(e.candidate)ref.collection("profCandidates").add(e.candidate.toJSON()).catch(console.warn);
- };
- pc.onconnectionstatechange=()=>{
-  console.log("Professeur",uid,pc.connectionState);
-  if(pc.connectionState==="connected")status("🟢 Un étudiant est connecté.","ok");
-  if(pc.connectionState==="failed"||pc.connectionState==="closed"){closeStudent(uid);}
- };
-
- // Candidats étudiant : on les garde si le remoteDescription n'est pas encore prêt.
- const candUnsub=ref.collection("candidates").onSnapshot(snap=>{
+ const unsubCandidates=ref.collection("candidates").onSnapshot(snap=>{
   snap.docChanges().forEach(ch=>{
    if(ch.type!=="added")return;
    const c=ch.doc.data();
-   if(remoteReady)pc.addIceCandidate(new RTCIceCandidate(c)).catch(console.warn);
-   else queued.push(c);
+   const key=JSON.stringify(c);
+   if(seen.has(key))return;
+   seen.add(key);
+   if(remoteDescriptionReady){
+    pc.addIceCandidate(new RTCIceCandidate(c)).catch(e=>console.warn("ICE étudiant",e));
+   }else queued.push(c);
   });
  });
- studentListeners.set(uid,[candUnsub]);
+
+ const old=studentUnsubs.get(uid)||[];
+ studentUnsubs.set(uid,[...old,unsubCandidates]);
+
+ pc.onicecandidate=e=>{
+  if(e.candidate){
+   ref.collection("profCandidates").add(e.candidate.toJSON()).catch(e=>console.warn("ICE professeur",e));
+  }
+ };
+
+ pc.oniceconnectionstatechange=()=>{
+  console.log("Prof ICE",uid,pc.iceConnectionState);
+  if(pc.iceConnectionState==="connected"||pc.iceConnectionState==="completed")
+   status("🟢 Connexion vidéo établie avec un étudiant.","ok");
+  if(pc.iceConnectionState==="failed")
+   status("❌ ICE a échoué pour un étudiant. Le réseau/TURN empêche la connexion.","err");
+ };
+
+ pc.onconnectionstatechange=()=>{
+  console.log("Prof PC",uid,pc.connectionState);
+  if(pc.connectionState==="connected")status("🟢 Un étudiant est connecté.","ok");
+  if(pc.connectionState==="failed"){
+   closeStudent(uid);
+   status("❌ Connexion WebRTC échouée pour un étudiant.","err");
+  }
+ };
 
  try{
   await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-  remoteReady=true;
-  for(const c of queued){try{await pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}}
+  remoteDescriptionReady=true;
+  for(const c of queued){
+   try{await pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){console.warn(e);}
+  }
 
   const answer=await pc.createAnswer();
   await pc.setLocalDescription(answer);
 
   await ref.set({
-   answer:{type:answer.type,sdp:answer.sdp},
+   answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},
    answerAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true});
 
   console.log("✅ Answer envoyée à",uid);
  }catch(e){
-  console.error("Erreur étudiant",uid,e);closeStudent(uid);
+  console.error("Création answer",uid,e);
+  closeStudent(uid);
+ }finally{
+  processing.delete(uid);
  }
 }
 
 async function approve(uid){
- if(!roomId)return;
+ if(!roomId||!isLive)return;
  const ref=db.collection("salles").doc(roomId).collection("students").doc(uid);
- await ref.set({approved:true,rejected:false},{merge:true});
  const snap=await ref.get();
- if(snap.exists)await processStudent(uid,snap.data());
+ if(!snap.exists)return;
+ const d=snap.data();
+ if(d.rejected===true)return;
+
+ await ref.set({
+  approved:true,rejected:false,
+  approvedAt:firebase.firestore.FieldValue.serverTimestamp()
+ },{merge:true});
+
+ const after=await ref.get();
+ if(after.exists)await createAnswerForStudent(uid,after.data());
  status("✅ Étudiant accepté.","ok");
 }
 async function reject(uid){
  if(!roomId)return;
  await db.collection("salles").doc(roomId).collection("students").doc(uid)
- .set({approved:false,rejected:true},{merge:true});
- closeStudent(uid);status("❌ Étudiant refusé.");
+ .set({approved:false,rejected:true,rejectedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+ closeStudent(uid);
+ status("❌ Étudiant refusé.");
 }
-
 window.approve=approve;window.reject=reject;
 
 function renderStudents(list){
@@ -166,20 +224,30 @@ function renderStudents(list){
   const d=s.data,id=s.id;
   const state=d.rejected?"❌ Refusé":d.approved?"🟢 Accepté":"⏳ En attente";
   return `<div class="student">
-   <div><div class="name">${escapeHtml(d.name||"Étudiant")}</div><div class="small">${escapeHtml(d.email||"")} — ${state}</div></div>
-   <div>${!d.approved&&!d.rejected?`<button class="green" onclick="approve('${id}')">✅</button> <button class="danger" onclick="reject('${id}')">❌</button>`:""}</div>
+   <div><div class="name">${esc(d.name||"Étudiant")}</div>
+   <div class="small">${esc(d.email||"")} — ${state}</div></div>
+   <div>${!d.approved&&!d.rejected&&d.offer?.sdp?
+   `<button class="green" onclick="approve('${esc(id)}')">✅</button>
+    <button class="danger" onclick="reject('${esc(id)}')">❌</button>`:""}</div>
   </div>`;
  }).join("");
 }
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 
 async function startLive(){
+ if(isLive)return;
  const id=$("roomId").value.trim();
  if(!id)throw new Error("ID de salle requis.");
+ if(!auth.currentUser)throw new Error("Vous devez être connecté.");
  await startCamera();
- roomId=id;isLive=true;
+
+ roomId=id;isLive=true;stopping=false;
+
  await db.collection("salles").doc(id).set({
-  professor:{online:true,uid:auth.currentUser.uid,name:auth.currentUser.displayName||"Professeur"},
+  professor:{
+   online:true,
+   uid:auth.currentUser.uid,
+   name:auth.currentUser.displayName||auth.currentUser.email||"Professeur"
+  },
   startedAt:firebase.firestore.FieldValue.serverTimestamp()
  },{merge:true});
 
@@ -187,53 +255,92 @@ async function startLive(){
  studentsUnsub=studentsRef.onSnapshot(snap=>{
   const list=snap.docs.map(d=>({id:d.id,data:d.data()}));
   renderStudents(list);
+
   snap.docChanges().forEach(ch=>{
-   if(ch.type==="added"||ch.type==="modified"){
-    const d=ch.doc.data();
-    if(auto && d.approved!==true && d.rejected!==true && d.offer?.sdp){
-     approve(ch.doc.id).catch(console.error);
-     return;
-    }
-    if(d.approved===true&&!d.rejected&&d.offer?.sdp)processStudent(ch.doc.id,d);
+   if(ch.type==="removed"){closeStudent(ch.doc.id);return;}
+   const d=ch.doc.data();
+   if(!d.offer?.sdp)return;
+
+   if(auto && d.approved!==true && d.rejected!==true){
+    approve(ch.doc.id).catch(console.error);
+   }else if(d.approved===true && d.rejected!==true){
+    createAnswerForStudent(ch.doc.id,d).catch(console.error);
    }
-   if(ch.type==="removed")closeStudent(ch.doc.id);
   });
  });
 
  roomUnsub=db.collection("salles").doc(id).onSnapshot(doc=>{
-  if(!doc.exists)return;
+  if(!doc.exists||stopping)return;
   const d=doc.data();
-  if(d.professor?.online!==true&&isLive)status("⚠️ Salle arrêtée.","err");
+  if(d.professor?.online!==true&&isLive)status("⚠️ La salle a été arrêtée.","err");
  });
 
- status("🟢 DIRECT LANCÉ — donnez l'ID "+id+" aux étudiants.","ok");
  $("startBtn").disabled=true;$("stopBtn").disabled=false;
+ status("🟢 DIRECT LANCÉ — ID : "+id,"ok");
 }
+
 async function stopLive(){
- isLive=false;
+ if(!isLive&&!roomId)return;
+ stopping=true;isLive=false;
  for(const uid of [...pcs.keys()])closeStudent(uid);
- if(studentsUnsub){studentsUnsub();studentsUnsub=null}
- if(roomUnsub){roomUnsub();roomUnsub=null}
- if(roomId){try{await db.collection("salles").doc(roomId).delete()}catch(e){}}
- roomId=null;
+ if(studentsUnsub){studentsUnsub();studentsUnsub=null;}
+ if(roomUnsub){roomUnsub();roomUnsub=null;}
+
+ const id=roomId;roomId=null;
+ if(id){
+  try{
+   await db.collection("salles").doc(id).set({
+    professor:{online:false,uid:auth.currentUser?.uid||null}
+   },{merge:true});
+  }catch(e){console.warn(e);}
+ }
  $("startBtn").disabled=false;$("stopBtn").disabled=true;
  $("students").innerHTML='<div class="empty">Aucun étudiant.</div>';
  status("⏹️ Direct arrêté.");
+ stopping=false;
 }
+
 $("loginBtn").onclick=async()=>{
- try{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});await auth.signInWithPopup(p);}
- catch(e){$("loginError").textContent="❌ "+e.message}
+ try{
+  const p=new firebase.auth.GoogleAuthProvider();
+  p.setCustomParameters({prompt:"select_account"});
+  await auth.signInWithPopup(p);
+ }catch(e){$("loginError").textContent="❌ "+e.message;}
 };
 $("startBtn").onclick=async()=>{try{await startLive()}catch(e){console.error(e);status("❌ "+e.message,"err")}};
 $("stopBtn").onclick=stopLive;
-$("cameraBtn").onclick=()=>{if(stream){const t=stream.getVideoTracks()[0];t.enabled=!t.enabled;$("cameraBtn").textContent=t.enabled?"📷 Caméra":"📷 Caméra OFF"}};
-$("micBtn").onclick=()=>{if(stream){const t=stream.getAudioTracks()[0];t.enabled=!t.enabled;$("micBtn").textContent=t.enabled?"🎤 Micro":"🎤 Micro OFF"}};
-$("autoBtn").onclick=()=>{auto=!auto;$("autoBtn").textContent=auto?"🤖 Auto : ON":"🤖 Auto : OFF";if(auto)status("🤖 Auto-approbation activée.");};
+
+$("cameraBtn").onclick=()=>{
+ if(!stream)return;
+ const t=stream.getVideoTracks()[0];
+ t.enabled=!t.enabled;
+ $("cameraBtn").textContent=t.enabled?"📷 Caméra":"📷 Caméra OFF";
+};
+$("micBtn").onclick=()=>{
+ if(!stream)return;
+ const t=stream.getAudioTracks()[0];
+ t.enabled=!t.enabled;
+ $("micBtn").textContent=t.enabled?"🎤 Micro":"🎤 Micro OFF";
+};
+$("autoBtn").onclick=()=>{
+ auto=!auto;
+ $("autoBtn").textContent=auto?"🤖 Auto : ON":"🤖 Auto : OFF";
+ status(auto?"🤖 Auto-approbation activée.":"🤖 Auto-approbation désactivée.",auto?"ok":"");
+};
+
 auth.onAuthStateChanged(u=>{
- if(u){$("login").style.display="none";$("app").style.display="block";$("user").textContent=`Connecté : ${u.displayName||u.email}`;}
- else{$("login").style.display="block";$("app").style.display="none";}
+ if(u){
+  $("login").style.display="none";$("app").style.display="block";
+  $("user").textContent=`Connecté : ${u.displayName||u.email}`;
+ }else{
+  $("login").style.display="block";$("app").style.display="none";
+ }
 });
-window.addEventListener("beforeunload",()=>{if(roomId)db.collection("salles").doc(roomId).delete();if(stream)stream.getTracks().forEach(t=>t.stop());});
+
+window.addEventListener("pagehide",()=>{
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ for(const uid of [...pcs.keys()])closeStudent(uid);
+});
 </script>
 </body>
 </html>
