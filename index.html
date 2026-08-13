@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎓 Étudiant - Rejoindre le direct</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .header h1 {
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 span {
+            background: #3b82f6;
+            padding: 4px 14px;
+            border-radius: 50px;
+            font-size: 13px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 16px 8px 8px;
+            border-radius: 50px;
+        }
+
+        .user-info img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-info .name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .user-info .email {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .badge {
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .badge-connecting {
+            background: #f59e0b;
+            color: #1a1a2e;
+        }
+
+        .badge-connected {
+            background: #4ade80;
+            color: #1a1a2e;
+        }
+
+        .badge-disconnected {
+            background: #64748b;
+            color: white;
+        }
+
+        /* SECTION VIDÉO */
+        .video-section {
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .video-wrapper {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            min-height: 400px;
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            object-fit: cover;
+            display: none;
+        }
+
+        .video-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .video-placeholder .icon {
+            font-size: 70px;
+            margin-bottom: 20px;
+        }
+
+        .video-placeholder .sub {
+            font-size: 14px;
+            margin-top: 8px;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* JOIN PANEL */
+        .join-panel {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .join-panel input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 16px;
+            min-width: 200px;
+            transition: border 0.3s;
+        }
+
+        .join-panel input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .join-panel input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-join {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-leave {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary.active {
+            background: #ef4444;
+        }
+
+        .btn-google {
+            background: white;
+            color: #1a1a2e;
+            font-size: 16px;
+            padding: 14px 30px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-google:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: #ef4444;
+        }
+
+        /* CONTROLS */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .controls .btn {
+            flex: 1;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        /* STATUS */
+        .status-bar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+
+        .status-bar.error {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .status-bar.success {
+            background: rgba(74, 222, 128, 0.12);
+            border-color: rgba(74, 222, 128, 0.3);
+            color: #4ade80;
+        }
+
+        .status-bar.loading {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: #3b82f6;
+        }
+
+        /* INFO CARD */
+        .info-card {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 15px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .info-card strong {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* LOGIN PANEL */
+        .login-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 50px 40px;
+            text-align: center;
+            max-width: 450px;
+            margin: 80px auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .login-panel .icon-big {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .login-panel h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .login-panel p {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .login-panel .google-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .user-info .name {
+                font-size: 12px;
+            }
+            .user-info .email {
+                display: none;
+            }
+
+            .join-panel {
+                flex-direction: column;
+            }
+
+            .join-panel input {
+                width: 100%;
+            }
+
+            .controls .btn {
+                min-width: 70px;
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+
+            .video-wrapper {
+                min-height: 250px;
+            }
+
+            .video-wrapper video {
+                min-height: 250px;
+            }
+
+            .video-placeholder {
+                min-height: 250px;
+            }
+
+            .login-panel {
+                padding: 30px 20px;
+                margin: 30px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ====== PANEL CONNEXION ====== -->
+    <div id="loginPanel" class="login-panel">
+        <div class="icon-big">🎓</div>
+        <h2>Espace Étudiant</h2>
+        <p>
+            Connectez-vous avec votre <strong>compte Google</strong> pour<br>
+            rejoindre les directs de vos professeurs.
+        </p>
+        <button id="loginBtn" class="btn btn-google">
+            <svg class="google-icon" viewBox="0 0 48 48">
+                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+            🔑 Se connecter avec Google
+        </button>
+        <div id="loginStatus" style="margin-top:15px; font-size:14px; color:rgba(255,255,255,0.5);"></div>
+    </div>
+
+    <!-- ====== INTERFACE PRINCIPALE ====== -->
+    <div id="mainPanel" style="display:none;">
+        <div class="container">
+
+            <!-- HEADER -->
+            <div class="header">
+                <h1>
+                    🎓 Étudiant <span>DIRECT</span>
+                </h1>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <div class="user-info" id="userInfo">
+                        <img id="userAvatar" src="" alt="Avatar">
+                        <div>
+                            <div class="name" id="userName">Étudiant</div>
+                            <div class="email" id="userEmail">email@example.com</div>
+                        </div>
+                        <button id="logoutBtn" class="btn btn-logout">🚪</button>
+                    </div>
+                    <span class="badge badge-disconnected" id="statusBadge">⚪ Déconnecté</span>
+                </div>
+            </div>
+
+            <!-- SECTION REJOINDRE -->
+            <div class="join-panel">
+                <input type="text" id="roomIdInput" placeholder="Entrez l'ID de la salle (ex: cours_xyz)">
+                <button id="joinBtn" class="btn btn-join">🎥 Rejoindre le direct</button>
+                <button id="leaveBtn" class="btn btn-leave" style="display:none;">🚪 Quitter</button>
+            </div>
+
+            <!-- VIDÉO -->
+            <div class="video-section">
+                <div class="video-wrapper">
+                    <video id="remoteVideo" autoplay playsinline></video>
+                    <div id="videoPlaceholder" class="video-placeholder">
+                        <div class="icon">📺</div>
+                        <div>En attente du professeur</div>
+                        <div class="sub">Entrez un ID et rejoignez le direct</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="toggleSoundBtn" class="btn btn-secondary">🔊 Son</button>
+                    <button id="toggleFullscreenBtn" class="btn btn-secondary">⛶ Plein écran</button>
+                </div>
+
+                <div class="info-card">
+                    <span>📡</span>
+                    <span>
+                        <strong>Statut :</strong>
+                        <span id="connectionStatus">En attente de connexion...</span>
+                    </span>
+                    <span style="margin-left:auto;">
+                        <strong>ID :</strong>
+                        <span id="currentRoomDisplay">-</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- STATUS -->
+            <div id="statusBar" class="status-bar">💡 Entrez un ID et rejoignez le direct</div>
+
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- JAVASCRIPT - Firebase + Auth + WebRTC         -->
+    <!-- ============================================== -->
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js">
+    </script>
+
+    <script>
+        // =============================================
+        // CONFIGURATION FIREBASE
+        // =============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXoNwKYj9GNgTSZr5wTWqIna6Cou33a98",
+            authDomain: "theovet-8323d.firebaseapp.com",
+            projectId: "theovet-8323d",
+            storageBucket: "theovet-8323d.firebasestorage.app",
+            messagingSenderId: "1007742031625",
+            appId: "1:1007742031625:web:3749c2ab333e7772c1a5d8",
+            databaseURL: "https://theovet-gestion-default-rtdb.firebaseio.com"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // =============================================
+        // SERVEURS TURN/STUN
+        // =============================================
+        const TURN_SERVERS = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 10
+        };
+
+        // =============================================
+        // LIVE STUDENT
+        // =============================================
+        class LiveStudent {
+            constructor() {
+                this.peerConnection = null;
+                this.currentRoomId = null;
+                this.isConnected = false;
+                this.soundEnabled = true;
+                this.roomRef = null;
+                this.viewerRef = null;
+                this.offerRef = null;
+                this.answerRef = null;
+                this.studentId = null;
+                this.onVideoReceived = null;
+                this.remoteStream = null;
+            }
+
+            async joinRoom(roomId, onVideoReceived) {
+                if (!roomId) throw new Error('ID de salle requis');
+
+                this.currentRoomId = roomId;
+                this.onVideoReceived = onVideoReceived;
+
+                // Récupérer l'ID de l'utilisateur connecté
+                const user = auth.currentUser;
+                if (!user) throw new Error('Vous devez être connecté');
+                this.studentId = user.uid;
+
+                // Vérifier que la salle existe
+                const roomSnapshot = await db.ref(`salles/${roomId}`).once('value');
+                if (!roomSnapshot.exists()) {
+                    throw new Error('Cette salle n\'existe pas. Vérifiez l\'ID.');
+                }
+
+                // Ajouter l'étudiant comme spectateur
+                this.viewerRef = db.ref(`salles/${roomId}/viewers/${this.studentId}`);
+                await this.viewerRef.set({
+                    joinedAt: Date.now(),
+                    name: user.displayName || 'Étudiant',
+                    email: user.email || ''
+                });
+                this.viewerRef.onDisconnect().remove();
+
+                // Créer la connexion
+                this.peerConnection = new RTCPeerConnection(TURN_SERVERS);
+
+                // Recevoir le flux du professeur
+                this.peerConnection.ontrack = (event) => {
+                    if (event.track.kind === 'video' || event.track.kind === 'audio') {
+                        if (!this.remoteStream) {
+                            this.remoteStream = new MediaStream();
+                        }
+                        this.remoteStream.addTrack(event.track);
+                        if (this.onVideoReceived) {
+                            this.onVideoReceived(this.remoteStream);
+                        }
+                    }
+                };
+
+                // Gérer les candidats ICE
+                this.peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        db.ref(`salles/${roomId}/candidates/${this.studentId}`)
+                            .set(JSON.stringify(event.candidate));
+                    }
+                };
+
+                // Créer l'offre
+                const offer = await this.peerConnection.createOffer();
+                await this.peerConnection.setLocalDescription(offer);
+
+                // Envoyer l'offre
+                this.offerRef = db.ref(`salles/${roomId}/offers/${this.studentId}`);
+                await this.offerRef.set({
+                    sdp: offer.sdp,
+                    type: offer.type,
+                    timestamp: Date.now()
+                });
+
+                // Écouter la réponse du professeur
+                this.answerRef = db.ref(`salles/${roomId}/answers/${this.studentId}`);
+                this.answerRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && data.sdp && !this.peerConnection.currentRemoteDescription) {
+                        this.peerConnection.setRemoteDescription(
+                            new RTCSessionDescription({
+                                sdp: data.sdp,
+                                type: data.type
+                            })
+                        ).then(() => {
+                            this.isConnected = true;
+                            console.log('✅ Connecté au professeur');
+                        }).catch(err => console.error('Erreur réponse:', err));
+                    }
+
+                    // Candidats ICE
+                    if (data && data.candidates) {
+                        try {
+                            const candidate = JSON.parse(data.candidates);
+                            this.peerConnection.addIceCandidate(
+                                new RTCIceCandidate(candidate)
+                            );
+                        } catch (e) {}
+                    }
+                });
+
+                this.roomRef = db.ref(`salles/${roomId}`);
+                this.isConnected = true;
+
+                return true;
+            }
+
+            async leaveRoom() {
+                try {
+                    // Fermer la connexion
+                    if (this.peerConnection) {
+                        this.peerConnection.close();
+                        this.peerConnection = null;
+                    }
+
+                    // Supprimer les références
+                    if (this.viewerRef) {
+                        await this.viewerRef.remove();
+                        this.viewerRef = null;
+                    }
+                    if (this.offerRef) {
+                        await this.offerRef.remove();
+                        this.offerRef = null;
+                    }
+                    if (this.answerRef) {
+                        this.answerRef.off();
+                        this.answerRef = null;
+                    }
+
+                    this.remoteStream = null;
+                    this.isConnected = false;
+                    this.currentRoomId = null;
+
+                    return true;
+                } catch (err) {
+                    console.error('Erreur leave:', err);
+                    throw err;
+                }
+            }
+
+            toggleSound() {
+                if (!this.remoteStream) return false;
+                const audioTrack = this.remoteStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    this.soundEnabled = !this.soundEnabled;
+                    audioTrack.enabled = this.soundEnabled;
+                    return this.soundEnabled;
+                }
+                return false;
+            }
+
+            cleanup() {
+                if (this.peerConnection) {
+                    this.peerConnection.close();
+                    this.peerConnection = null;
+                }
+                if (this.viewerRef) this.viewerRef.remove();
+                if (this.offerRef) this.offerRef.remove();
+                if (this.answerRef) {
+                    this.answerRef.off();
+                    this.answerRef = null;
+                }
+                this.remoteStream = null;
+                this.isConnected = false;
+            }
+        }
+
+        // =============================================
+        // AUTHENTIFICATION GOOGLE
+        // =============================================
+        class AuthManager {
+            constructor() {
+                this.currentUser = null;
+                this.isAuthenticated = false;
+                this.onAuthChange = null;
+            }
+
+            async loginWithGoogle() {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({
+                        prompt: 'select_account'
+                    });
+                    const result = await auth.signInWithPopup(provider);
+                    this.currentUser = result.user;
+                    this.isAuthenticated = true;
+                    if (this.onAuthChange) this.onAuthChange(this.currentUser);
+                    return this.currentUser;
+                } catch (err) {
+                    console.error('Erreur connexion:', err);
+                    if (err.code === 'auth/popup-blocked') {
+                        throw new Error('Le popup a été bloqué. Autorisez les popups pour ce site.');
+                    }
+                    throw new Error('Erreur de connexion: ' + err.message);
+                }
+            }
+
+            async logout() {
+                try {
+                    await auth.signOut();
+                    this.currentUser = null;
+                    this.isAuthenticated = false;
+                    if (this.onAuthChange) this.onAuthChange(null);
+                    return true;
+                } catch (err) {
+                    console.error('Erreur déconnexion:', err);
+                    throw err;
+                }
+            }
+
+            listen(callback) {
+                this.onAuthChange = callback;
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        this.isAuthenticated = true;
+                    } else {
+                        this.currentUser = null;
+                        this.isAuthenticated = false;
+                    }
+                    if (this.onAuthChange) this.onAuthChange(this.currentUser);
+                });
+            }
+        }
+
+        // =============================================
+        // INITIALISATION
+        // =============================================
+
+        const authManager = new AuthManager();
+        const student = new LiveStudent();
+
+        // ÉLÉMENTS DOM
+        const loginPanel = document.getElementById('loginPanel');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginStatus = document.getElementById('loginStatus');
+        const mainPanel = document.getElementById('mainPanel');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const userEmail = document.getElementById('userEmail');
+
+        const roomIdInput = document.getElementById('roomIdInput');
+        const joinBtn = document.getElementById('joinBtn');
+        const leaveBtn = document.getElementById('leaveBtn');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const statusBar = document.getElementById('statusBar');
+        const statusBadge = document.getElementById('statusBadge');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const currentRoomDisplay = document.getElementById('currentRoomDisplay');
+        const toggleSoundBtn = document.getElementById('toggleSoundBtn');
+        const toggleFullscreenBtn = document.getElementById('toggleFullscreenBtn');
+
+        // =============================================
+        // FONCTIONS UTILITAIRES
+        // =============================================
+
+        function setStatus(msg, type = 'info') {
+            statusBar.textContent = msg;
+            statusBar.className = 'status-bar';
+            if (type === 'error') statusBar.classList.add('error');
+            if (type === 'success') statusBar.classList.add('success');
+            if (type === 'loading') statusBar.classList.add('loading');
+            console.log(`[Status] ${msg}`);
+        }
+
+        function updateStatus(connected, roomId) {
+            if (connected) {
+                statusBadge.className = 'badge badge-connected';
+                statusBadge.textContent = '🟢 Connecté';
+                connectionStatus.textContent = '✅ Connecté au professeur';
+                currentRoomDisplay.textContent = roomId || '-';
+                joinBtn.style.display = 'none';
+                leaveBtn.style.display = 'inline-flex';
+            } else {
+                statusBadge.className = 'badge badge-disconnected';
+                statusBadge.textContent = '⚪ Déconnecté';
+                connectionStatus.textContent = 'En attente de connexion...';
+                currentRoomDisplay.textContent = '-';
+                joinBtn.style.display = 'inline-flex';
+                joinBtn.disabled = false;
+                leaveBtn.style.display = 'none';
+            }
+        }
+
+        function showVideo(stream) {
+            if (stream) {
+                remoteVideo.srcObject = stream;
+                remoteVideo.style.display = 'block';
+                videoPlaceholder.style.display = 'none';
+            } else {
+                remoteVideo.srcObject = null;
+                remoteVideo.style.display = 'none';
+                videoPlaceholder.style.display = 'flex';
+            }
+        }
+
+        function updateUserUI(user) {
+            if (user) {
+                userAvatar.src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || 'User');
+                userName.textContent = user.displayName || 'Étudiant';
+                userEmail.textContent = user.email || '';
+                loginPanel.style.display = 'none';
+                mainPanel.style.display = 'block';
+                setStatus(`✅ Connecté en tant que ${user.displayName}`, 'success');
+            } else {
+                loginPanel.style.display = 'block';
+                mainPanel.style.display = 'none';
+                loginStatus.textContent = '';
+                // Nettoyer
+                student.cleanup();
+                showVideo(null);
+                updateStatus(false);
+                toggleSoundBtn.textContent = '🔊 Son';
+                toggleSoundBtn.classList.remove('active');
+                setStatus('🔒 Déconnecté', 'info');
+            }
+        }
+
+        // =============================================
+        // GESTIONNAIRES D'ÉVÉNEMENTS
+        // =============================================
+
+        // ✅ CONNEXION GOOGLE
+        loginBtn.onclick = async () => {
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ Connexion...';
+            loginStatus.textContent = '🔄 Connexion en cours...';
+
+            try {
+                const user = await authManager.loginWithGoogle();
+                loginStatus.textContent = '✅ Connecté !';
+                updateUserUI(user);
+            } catch (err) {
+                loginStatus.textContent = '❌ ' + err.message;
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = `
+                        <svg class="google-icon" viewBox="0 0 48 48" style="width:24px;height:24px;">
+                            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                        </svg>
+                        🔑 Se connecter avec Google
+                    `;
+            }
+        };
+
+        // ✅ DÉCONNEXION
+        logoutBtn.onclick = async () => {
+            try {
+                await authManager.logout();
+                updateUserUI(null);
+                setStatus('🔒 Déconnecté', 'success');
+            } catch (err) {
+                setStatus('❌ Erreur déconnexion: ' + err.message, 'error');
+            }
+        };
+
+        // ✅ REJOINDRE
+        joinBtn.onclick = async () => {
+            const roomId = roomIdInput.value.trim();
+            if (!roomId) {
+                setStatus('❌ Entrez un ID de salle', 'error');
+                return;
+            }
+
+            if (!authManager.isAuthenticated) {
+                setStatus('❌ Vous devez être connecté', 'error');
+                return;
+            }
+
+            joinBtn.disabled = true;
+            joinBtn.textContent = '⏳ Connexion...';
+            setStatus('🔄 Connexion au direct...', 'loading');
+
+            try {
+                await student.joinRoom(roomId, (stream) => {
+                    showVideo(stream);
+                    setStatus('✅ Connecté au direct !', 'success');
+                    updateStatus(true, roomId);
+                });
+
+                updateStatus(true, roomId);
+                setStatus(`✅ Connecté à la salle : ${roomId}`, 'success');
+
+            } catch (err) {
+                setStatus('❌ ' + err.message, 'error');
+                joinBtn.disabled = false;
+                joinBtn.textContent = '🎥 Rejoindre le direct';
+                showVideo(null);
+                updateStatus(false);
+            }
+        };
+
+        // ✅ QUITTER
+        leaveBtn.onclick = async () => {
+            leaveBtn.disabled = true;
+            leaveBtn.textContent = '⏳ Déconnexion...';
+            setStatus('⏹️ Déconnexion...', 'loading');
+
+            try {
+                await student.leaveRoom();
+                showVideo(null);
+                setStatus('🚪 Vous avez quitté le direct', 'success');
+                updateStatus(false);
+                joinBtn.disabled = false;
+                joinBtn.textContent = '🎥 Rejoindre le direct';
+                leaveBtn.disabled = false;
+                leaveBtn.textContent = '🚪 Quitter';
+                toggleSoundBtn.textContent = '🔊 Son';
+                toggleSoundBtn.classList.remove('active');
+            } catch (err) {
+                setStatus('❌ ' + err.message, 'error');
+                leaveBtn.disabled = false;
+                leaveBtn.textContent = '🚪 Quitter';
+            }
+        };
+
+        // ✅ TOGGLE SON
+        toggleSoundBtn.onclick = () => {
+            if (!student.isConnected) {
+                setStatus('⚠️ Rejoignez un direct d\'abord', 'error');
+                return;
+            }
+            const enabled = student.toggleSound();
+            toggleSoundBtn.textContent = enabled ? '🔊 Son' : '🔇 Muet';
+            toggleSoundBtn.classList.toggle('active', !enabled);
+            setStatus(enabled ? '🔊 Son activé' : '🔇 Son coupé', 'success');
+        };
+
+        // ✅ PLEIN ÉCRAN
+        toggleFullscreenBtn.onclick = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        };
+
+        // ✅ ENTER POUR REJOINDRE
+        roomIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !joinBtn.disabled && authManager.isAuthenticated) {
+                joinBtn.click();
+            }
+        });
+
+        // ✅ ÉCOUTER L'AUTHENTIFICATION
+        authManager.listen((user) => {
+            updateUserUI(user);
+        });
+
+        // ✅ VÉRIFICATION SALLE AUTO (depuis URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomFromUrl = urlParams.get('room');
+        if (roomFromUrl) {
+            roomIdInput.value = roomFromUrl;
+            setTimeout(() => {
+                if (authManager.isAuthenticated) {
+                    joinBtn.click();
+                }
+            }, 1000);
+        }
+
+        // ✅ NETTOYAGE
+        window.addEventListener('beforeunload', () => {
+            student.cleanup();
+        });
+
+        console.log('🎓 Étudiant - Avec authentification Google');
+        console.log('📋 Pour rejoindre un direct:');
+        console.log('1. Connectez-vous avec Google');
+        console.log('2. Entrez l\'ID de la salle');
+        console.log('3. Cliquez sur "Rejoindre" !');
+    </script>
+
+</body>
+</html>
