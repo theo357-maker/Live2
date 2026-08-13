@@ -19,6 +19,7 @@
         .badge-online{background:#4ade80;color:#1a1a2e}
         .badge-offline{background:#ef4444;color:#fff}
         .badge-viewers{background:#3b82f6;color:#fff}
+        .badge-pending{background:#f59e0b;color:#1a1a2e}
         .main-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px}
         .video-section{background:rgba(0,0,0,0.85);border-radius:20px;padding:20px;border:1px solid rgba(255,255,255,0.1)}
         .video-wrapper{position:relative;border-radius:12px;overflow:hidden;background:#000;min-height:450px}
@@ -36,10 +37,13 @@
         .btn-secondary{background:#64748b;color:#fff}
         .btn-secondary.active{background:#ef4444}
         .btn-info{background:#3b82f6;color:#fff}
+        .btn-success{background:#4ade80;color:#1a1a2e}
+        .btn-danger{background:#ef4444;color:#fff}
         .btn-google{background:#fff;color:#1a1a2e;font-size:16px;padding:14px 30px;width:100%;justify-content:center}
         .btn-google:hover{background:#f0f0f0}
         .btn-logout{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:8px 16px;font-size:13px}
         .btn-logout:hover{background:rgba(239,68,68,0.3);border-color:#ef4444}
+        .btn-sm{padding:6px 14px;font-size:12px}
         .side-panel{display:flex;flex-direction:column;gap:20px}
         .card{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-radius:20px;padding:20px;border:1px solid rgba(255,255,255,0.08);color:#fff}
         .card h3{margin-bottom:15px;font-size:18px;display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.9)}
@@ -52,18 +56,28 @@
         .room-id-display.show{display:block}
         .copy-btn{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:8px 15px;border-radius:6px;cursor:pointer;font-size:13px;transition:all .3s;margin-top:8px}
         .copy-btn:hover{background:rgba(255,255,255,0.2)}
-        .viewer-list{max-height:250px;overflow-y:auto}
-        .viewer-item{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,0.8)}
-        .viewer-item .online{color:#4ade80;font-size:12px}
+        .viewer-list{max-height:300px;overflow-y:auto}
+        .viewer-item{padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,0.8);gap:10px;flex-wrap:wrap}
+        .viewer-item .info{display:flex;flex-direction:column;gap:2px}
+        .viewer-item .name{font-weight:500;color:#fff}
+        .viewer-item .status{font-size:12px}
+        .viewer-item .status.waiting{color:#f59e0b}
+        .viewer-item .status.approved{color:#4ade80}
+        .viewer-item .status.rejected{color:#ef4444}
+        .viewer-item .actions{display:flex;gap:6px}
+        .viewer-item .actions .btn{padding:4px 12px;font-size:12px;min-width:auto}
         .viewer-empty{color:rgba(255,255,255,0.3);text-align:center;padding:30px 20px}
         .status-bar{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-radius:12px;padding:15px 20px;color:rgba(255,255,255,0.8);margin-top:20px;text-align:center;border:1px solid rgba(255,255,255,0.05);transition:all .3s}
         .status-bar.error{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.3);color:#ef4444}
         .status-bar.success{background:rgba(74,222,128,0.15);border-color:rgba(74,222,128,0.3);color:#4ade80}
         .status-bar.loading{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.3);color:#3b82f6}
+        .status-bar.warning{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:#f59e0b}
         .login-panel{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border-radius:30px;padding:50px 40px;text-align:center;max-width:450px;margin:80px auto;border:1px solid rgba(255,255,255,0.1);color:#fff}
         .login-panel .icon-big{font-size:80px;margin-bottom:20px}
         .login-panel h2{font-size:28px;margin-bottom:10px}
         .login-panel p{color:rgba(255,255,255,0.6);margin-bottom:30px;line-height:1.8}
+        .notification-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;margin-left:6px}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         @media(max-width:768px){.main-grid{grid-template-columns:1fr}.header h1{font-size:20px}.user-info .name{font-size:12px}.user-info .email{display:none}.video-controls .btn{min-width:70px;font-size:13px;padding:10px 12px}.login-panel{padding:30px 20px;margin:30px 15px}}
     </style>
 </head>
@@ -92,6 +106,7 @@
                     </div>
                     <span class="badge badge-offline" id="statusBadge">🔴 Direct Arrêté</span>
                     <span class="badge badge-viewers" id="viewerBadge">👁️ 0 spectateurs</span>
+                    <span class="badge badge-pending" id="pendingBadge" style="display:none;">⏳ Demandes <span id="pendingCount">0</span><span class="notification-dot"></span></span>
                 </div>
             </div>
 
@@ -110,6 +125,7 @@
                         <button id="stopBtn" class="btn btn-stop" disabled>⏹️ Arrêter</button>
                         <button id="toggleCameraBtn" class="btn btn-secondary">📷 Caméra</button>
                         <button id="toggleMicBtn" class="btn btn-secondary">🎤 Micro</button>
+                        <button id="autoApproveBtn" class="btn btn-info" style="flex:0.5;">🤖 Auto</button>
                     </div>
                 </div>
 
@@ -127,7 +143,7 @@
                         </div>
                     </div>
                     <div class="card">
-                        <h3>👥 Spectateurs en direct</h3>
+                        <h3>👥 Spectateurs <span id="viewerCountDisplay" style="font-size:14px;color:rgba(255,255,255,0.5);">(0)</span></h3>
                         <div id="viewerList" class="viewer-list">
                             <div class="viewer-empty">⏳ En attente de spectateurs...</div>
                         </div>
@@ -190,6 +206,14 @@ class LiveProfessor {
         this.viewersUnsubscribe = null;
         this.offersUnsubscribe = null;
         this.roomRef = null;
+        this.pendingStudents = new Map();
+        this.approvedStudents = new Set();
+        this.autoApprove = false;
+        this.onPendingUpdate = null;
+    }
+
+    setAutoApprove(value) {
+        this.autoApprove = value;
     }
 
     async startCamera() {
@@ -206,7 +230,7 @@ class LiveProfessor {
         }
     }
 
-    async startLive(roomId, onViewerUpdate) {
+    async startLive(roomId, onViewerUpdate, onPendingUpdate) {
         if (!roomId) throw new Error('ID de salle requis');
         if (!this.localStream) {
             await this.startCamera();
@@ -214,6 +238,7 @@ class LiveProfessor {
 
         this.currentRoomId = roomId;
         this.isLive = true;
+        this.onPendingUpdate = onPendingUpdate;
 
         this.roomRef = db.collection('salles').doc(roomId);
 
@@ -225,6 +250,8 @@ class LiveProfessor {
                 uid: auth.currentUser?.uid
             },
             viewers: {},
+            pending: {},
+            approved: [],
             createdAt: Date.now()
         });
 
@@ -232,8 +259,15 @@ class LiveProfessor {
             if (doc.exists) {
                 const data = doc.data();
                 const viewers = data.viewers || {};
+                const pending = data.pending || {};
+                const approved = data.approved || [];
+                
                 this.viewerCount = Object.keys(viewers).length;
-                if (onViewerUpdate) onViewerUpdate(this.viewerCount, viewers);
+                this.pendingStudents = new Map(Object.entries(pending));
+                this.approvedStudents = new Set(approved);
+                
+                if (onViewerUpdate) onViewerUpdate(this.viewerCount, viewers, pending, approved);
+                if (this.onPendingUpdate) this.onPendingUpdate(this.pendingStudents.size);
             }
         });
 
@@ -246,14 +280,93 @@ class LiveProfessor {
                         const studentId = change.doc.id;
                         const offerData = change.doc.data();
                         console.log(`📡 Offre reçue de l'étudiant ${studentId}`);
-                        if (!this.peerConnections.has(studentId) && this.localStream) {
+                        
+                        // Vérifier si l'étudiant est déjà approuvé
+                        if (this.approvedStudents.has(studentId)) {
                             this.handleStudentOffer(studentId, offerData);
+                        } else {
+                            // Ajouter à la liste des demandes en attente
+                            this.addPendingStudent(studentId, offerData);
                         }
                     }
                 });
             });
 
         return true;
+    }
+
+    async addPendingStudent(studentId, offerData) {
+        const user = auth.currentUser;
+        const studentName = offerData.name || 'Étudiant';
+        
+        // Ajouter à Firestore
+        await this.roomRef.update({
+            [`pending.${studentId}`]: {
+                name: studentName,
+                email: offerData.email || '',
+                timestamp: Date.now(),
+                offer: offerData
+            }
+        });
+        
+        console.log(`⏳ Demande en attente de ${studentName}`);
+        
+        // Si auto-approve est activé, approuver automatiquement
+        if (this.autoApprove) {
+            setTimeout(() => {
+                this.approveStudent(studentId);
+            }, 1000);
+        }
+    }
+
+    async approveStudent(studentId) {
+        if (!this.currentRoomId) return;
+        
+        console.log(`✅ Approbation de l'étudiant ${studentId}`);
+        
+        try {
+            // Récupérer l'offre
+            const pendingData = this.pendingStudents.get(studentId);
+            if (!pendingData) {
+                console.warn('Aucune donnée en attente pour', studentId);
+                return;
+            }
+            
+            // Ajouter aux approuvés
+            await this.roomRef.update({
+                [`approved`]: firebase.firestore.FieldValue.arrayUnion(studentId),
+                [`pending.${studentId}`]: firebase.firestore.FieldValue.delete()
+            });
+            
+            // Traiter la connexion WebRTC
+            this.handleStudentOffer(studentId, pendingData.offer || pendingData);
+            
+            this.approvedStudents.add(studentId);
+            this.pendingStudents.delete(studentId);
+            
+            if (this.onPendingUpdate) this.onPendingUpdate(this.pendingStudents.size);
+            
+        } catch (err) {
+            console.error('Erreur approbation:', err);
+        }
+    }
+
+    async rejectStudent(studentId) {
+        if (!this.currentRoomId) return;
+        
+        console.log(`❌ Rejet de l'étudiant ${studentId}`);
+        
+        try {
+            await this.roomRef.update({
+                [`pending.${studentId}`]: firebase.firestore.FieldValue.delete()
+            });
+            
+            this.pendingStudents.delete(studentId);
+            
+            if (this.onPendingUpdate) this.onPendingUpdate(this.pendingStudents.size);
+        } catch (err) {
+            console.error('Erreur rejet:', err);
+        }
     }
 
     async handleStudentOffer(studentId, offerData) {
@@ -267,13 +380,11 @@ class LiveProfessor {
             const pc = new RTCPeerConnection(TURN_SERVERS);
             this.peerConnections.set(studentId, pc);
 
-            // Ajouter les tracks du flux local
             this.localStream.getTracks().forEach(track => {
                 pc.addTrack(track, this.localStream);
                 console.log(`➕ Track ajouté: ${track.kind}`);
             });
 
-            // Gérer les candidats ICE
             const candidatesRef = db.collection('salles')
                 .doc(this.currentRoomId)
                 .collection('answers')
@@ -291,19 +402,17 @@ class LiveProfessor {
                 if (pc.connectionState === 'connected') {
                     console.log(`✅ Étudiant ${studentId} connecté`);
                 }
-                if (pc.connectionState === 'failed') {
-                    console.log(`❌ Échec connexion ${studentId}`);
+                if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+                    console.log(`❌ ${studentId} déconnecté`);
                     pc.close();
                     this.peerConnections.delete(studentId);
                 }
             };
 
-            // Configurer la connexion
             await pc.setRemoteDescription(new RTCSessionDescription(offerData));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
-            // Envoyer la réponse
             await db.collection('salles')
                 .doc(this.currentRoomId)
                 .collection('answers')
@@ -316,7 +425,6 @@ class LiveProfessor {
 
             console.log(`✅ Réponse envoyée à l'étudiant ${studentId}`);
 
-            // Écouter les candidats étudiants
             db.collection('salles')
                 .doc(this.currentRoomId)
                 .collection('studentCandidates')
@@ -363,6 +471,8 @@ class LiveProfessor {
         this.currentRoomId = null;
         this.isLive = false;
         this.viewerCount = 0;
+        this.pendingStudents.clear();
+        this.approvedStudents.clear();
         return true;
     }
 
@@ -456,25 +566,90 @@ const statusBar = document.getElementById('statusBar');
 const statusBadge = document.getElementById('statusBadge');
 const viewerBadge = document.getElementById('viewerBadge');
 const viewerList = document.getElementById('viewerList');
+const pendingBadge = document.getElementById('pendingBadge');
+const pendingCount = document.getElementById('pendingCount');
+const autoApproveBtn = document.getElementById('autoApproveBtn');
+const viewerCountDisplay = document.getElementById('viewerCountDisplay');
+
+let autoApprove = false;
 
 function setStatus(msg, type = 'info') {
     statusBar.textContent = msg;
     statusBar.className = 'status-bar ' + type;
 }
 
-function updateViewerList(viewers) {
-    const keys = Object.keys(viewers || {});
-    if (keys.length === 0) {
-        viewerList.innerHTML = '<div class="viewer-empty">⏳ En attente de spectateurs...</div>';
-        return;
+function updateViewerList(viewers, pending, approved) {
+    const viewerKeys = Object.keys(viewers || {});
+    const pendingKeys = Object.keys(pending || {});
+    const approvedSet = new Set(approved || []);
+    
+    let html = '';
+    
+    // Afficher les demandes en attente
+    if (pendingKeys.length > 0) {
+        html += `<div style="padding:8px 12px;background:rgba(245,158,11,0.1);border-radius:8px;margin-bottom:10px;color:#f59e0b;font-size:13px;font-weight:bold;">⏳ Demandes en attente (${pendingKeys.length})</div>`;
+        
+        pendingKeys.forEach(id => {
+            const data = pending[id];
+            html += `
+                <div class="viewer-item" style="background:rgba(245,158,11,0.05);border-radius:8px;margin-bottom:5px;">
+                    <div class="info">
+                        <span class="name">${data.name || 'Étudiant'}</span>
+                        <span class="status waiting">⏳ En attente d'approbation</span>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-success btn-sm" onclick="approveStudent('${id}')">✅ Accepter</button>
+                        <button class="btn btn-danger btn-sm" onclick="rejectStudent('${id}')">❌ Refuser</button>
+                    </div>
+                </div>
+            `;
+        });
     }
-    viewerList.innerHTML = keys.map((id, index) => `
-        <div class="viewer-item">
-            <span>👤 ${viewers[id]?.name || 'Spectateur'} #${index + 1}</span>
-            <span class="online">🟢 En direct</span>
-        </div>
-    `).join('');
+    
+    // Afficher les spectateurs approuvés
+    const approvedViewers = viewerKeys.filter(id => approvedSet.has(id));
+    if (approvedViewers.length > 0) {
+        html += `<div style="padding:8px 12px;margin-top:10px;color:rgba(255,255,255,0.5);font-size:13px;">✅ Spectateurs connectés (${approvedViewers.length})</div>`;
+        
+        approvedViewers.forEach(id => {
+            const data = viewers[id];
+            html += `
+                <div class="viewer-item">
+                    <div class="info">
+                        <span class="name">${data.name || 'Étudiant'}</span>
+                        <span class="status approved">🟢 En direct</span>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    if (viewerKeys.length === 0 && pendingKeys.length === 0) {
+        html = '<div class="viewer-empty">⏳ En attente de spectateurs...</div>';
+    }
+    
+    viewerList.innerHTML = html;
+    viewerCountDisplay.textContent = `(${viewerKeys.length})`;
 }
+
+function updatePendingBadge(count) {
+    if (count > 0) {
+        pendingBadge.style.display = 'inline-flex';
+        pendingCount.textContent = count;
+        pendingBadge.classList.add('badge-pending');
+    } else {
+        pendingBadge.style.display = 'none';
+    }
+}
+
+// Fonctions globales pour les boutons d'approbation
+window.approveStudent = function(studentId) {
+    professor.approveStudent(studentId);
+};
+
+window.rejectStudent = function(studentId) {
+    professor.rejectStudent(studentId);
+};
 
 function generateRoomId() {
     return 'cours_' + Math.random().toString(36).substring(2, 8);
@@ -533,6 +708,15 @@ copyIdBtn.onclick = () => {
     });
 };
 
+autoApproveBtn.onclick = () => {
+    autoApprove = !autoApprove;
+    professor.setAutoApprove(autoApprove);
+    autoApproveBtn.textContent = autoApprove ? '🤖 Auto: ON' : '🤖 Auto: OFF';
+    autoApproveBtn.style.background = autoApprove ? '#4ade80' : '#64748b';
+    autoApproveBtn.style.color = autoApprove ? '#1a1a2e' : '#fff';
+    setStatus(autoApprove ? '🤖 Mode auto-approbation activé' : '🤖 Mode auto-approbation désactivé', 'warning');
+};
+
 startBtn.onclick = async () => {
     let roomId = roomIdInput.value.trim() || generateRoomId();
     roomIdInput.value = roomId;
@@ -550,9 +734,12 @@ startBtn.onclick = async () => {
             videoPlaceholder.style.display = 'none';
         }
 
-        await professor.startLive(roomId, (count, viewers) => {
+        await professor.startLive(roomId, (count, viewers, pending, approved) => {
             viewerBadge.textContent = `👁️ ${count} spectateurs`;
-            updateViewerList(viewers);
+            updateViewerList(viewers, pending, approved);
+            updatePendingBadge(Object.keys(pending || {}).length);
+        }, (pendingCount) => {
+            updatePendingBadge(pendingCount);
         });
 
         updateRoomDisplay(roomId);
@@ -563,6 +750,12 @@ startBtn.onclick = async () => {
         startBtn.textContent = '🔴 En direct';
         startBtn.className = 'btn btn-start';
         stopBtn.disabled = false;
+
+        // Appliquer le mode auto-approbation
+        professor.setAutoApprove(autoApprove);
+        if (autoApprove) {
+            setStatus('🤖 Mode auto-approbation activé - les étudiants seront acceptés automatiquement', 'warning');
+        }
 
     } catch (err) {
         setStatus('❌ ' + err.message, 'error');
@@ -587,6 +780,8 @@ stopBtn.onclick = async () => {
     updateRoomDisplay(null);
     localVideo.style.display = 'none';
     videoPlaceholder.style.display = 'flex';
+    updatePendingBadge(0);
+    viewerList.innerHTML = '<div class="viewer-empty">⏳ En attente de spectateurs...</div>';
 };
 
 toggleCameraBtn.onclick = () => {
