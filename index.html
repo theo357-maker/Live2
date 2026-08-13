@@ -190,7 +190,6 @@ class LiveProfessor {
         this.viewersUnsubscribe = null;
         this.offersUnsubscribe = null;
         this.roomRef = null;
-        this.pendingOffers = new Map(); // Stocker les offres en attente
     }
 
     async startCamera() {
@@ -216,10 +215,8 @@ class LiveProfessor {
         this.currentRoomId = roomId;
         this.isLive = true;
 
-        // Référence au document de la salle
         this.roomRef = db.collection('salles').doc(roomId);
 
-        // Créer la salle
         await this.roomRef.set({
             professor: {
                 online: true,
@@ -231,7 +228,6 @@ class LiveProfessor {
             createdAt: Date.now()
         });
 
-        // Écouter les spectateurs
         this.viewersUnsubscribe = this.roomRef.onSnapshot((doc) => {
             if (doc.exists) {
                 const data = doc.data();
@@ -241,7 +237,6 @@ class LiveProfessor {
             }
         });
 
-        // Écouter les offres des étudiants (sous-collection)
         this.offersUnsubscribe = db.collection('salles')
             .doc(roomId)
             .collection('offers')
@@ -250,14 +245,9 @@ class LiveProfessor {
                     if (change.type === 'added') {
                         const studentId = change.doc.id;
                         const offerData = change.doc.data();
-                        // Attendre que le flux local soit prêt
-                        if (this.localStream && !this.peerConnections.has(studentId)) {
+                        console.log(`📡 Offre reçue de l'étudiant ${studentId}`);
+                        if (!this.peerConnections.has(studentId) && this.localStream) {
                             this.handleStudentOffer(studentId, offerData);
-                        } else if (!this.peerConnections.has(studentId)) {
-                            // Stocker l'offre en attente
-                            this.pendingOffers.set(studentId, offerData);
-                            // Réessayer quand le flux sera prêt
-                            this.checkPendingOffers();
                         }
                     }
                 });
@@ -266,30 +256,21 @@ class LiveProfessor {
         return true;
     }
 
-    checkPendingOffers() {
-        if (!this.localStream) return;
-        for (const [studentId, offerData] of this.pendingOffers) {
-            if (!this.peerConnections.has(studentId)) {
-                this.handleStudentOffer(studentId, offerData);
-                this.pendingOffers.delete(studentId);
-            }
-        }
-    }
-
     async handleStudentOffer(studentId, offerData) {
-        if (!this.localStream) return;
+        if (!this.localStream) {
+            console.warn('Pas de flux local, offre ignorée');
+            return;
+        }
 
         try {
+            console.log(`📡 Traitement de l'offre de ${studentId}`);
             const pc = new RTCPeerConnection(TURN_SERVERS);
             this.peerConnections.set(studentId, pc);
 
             // Ajouter les tracks du flux local
             this.localStream.getTracks().forEach(track => {
-                try {
-                    pc.addTrack(track, this.localStream);
-                } catch(e) {
-                    console.error('Erreur ajout track:', e);
-                }
+                pc.addTrack(track, this.localStream);
+                console.log(`➕ Track ajouté: ${track.kind}`);
             });
 
             // Gérer les candidats ICE
@@ -310,14 +291,14 @@ class LiveProfessor {
                 if (pc.connectionState === 'connected') {
                     console.log(`✅ Étudiant ${studentId} connecté`);
                 }
-                if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-                    console.log(`❌ Étudiant ${studentId} déconnecté`);
+                if (pc.connectionState === 'failed') {
+                    console.log(`❌ Échec connexion ${studentId}`);
                     pc.close();
                     this.peerConnections.delete(studentId);
                 }
             };
 
-            // Configurer la connexion avec l'offre
+            // Configurer la connexion
             await pc.setRemoteDescription(new RTCSessionDescription(offerData));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
@@ -332,6 +313,8 @@ class LiveProfessor {
                     type: answer.type,
                     timestamp: Date.now()
                 });
+
+            console.log(`✅ Réponse envoyée à l'étudiant ${studentId}`);
 
             // Écouter les candidats étudiants
             db.collection('salles')
@@ -350,21 +333,17 @@ class LiveProfessor {
                     });
                 });
 
-            console.log(`📡 Réponse envoyée à l'étudiant ${studentId}`);
-
         } catch (err) {
-            console.error(`❌ Erreur étudiant ${studentId}:`, err);
+            console.error(`❌ Erreur avec ${studentId}:`, err);
             this.peerConnections.delete(studentId);
         }
     }
 
     async stopLive() {
-        // Fermer toutes les connexions
         for (const [id, pc] of this.peerConnections) {
             try { pc.close(); } catch(e) {}
         }
         this.peerConnections.clear();
-        this.pendingOffers.clear();
 
         if (this.viewersUnsubscribe) {
             this.viewersUnsubscribe();
