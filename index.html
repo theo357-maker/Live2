@@ -118,7 +118,7 @@
                         <h3>🏷️ Salle de cours</h3>
                         <div class="subtitle">Donnez cet ID à vos étudiants</div>
                         <div class="room-info">
-                            <input type="text" id="roomId" placeholder="ID de la salle" value="cours_ix3dug">
+                            <input type="text" id="roomId" placeholder="ID de la salle" value="cours_test">
                             <button id="generateIdBtn" class="btn btn-info" style="font-size:13px;padding:8px 15px;width:100%;">🎲 Générer un ID</button>
                             <div class="room-id-display" id="roomIdDisplay">
                                 📋 <span id="displayedRoomId"></span><br>
@@ -141,7 +141,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -155,7 +155,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.database();
+const db = firebase.firestore();
 
 const TURN_SERVERS = {
     iceServers: [
@@ -182,51 +182,32 @@ class LiveProfessor {
     constructor() {
         this.localStream = null;
         this.peerConnections = new Map();
-        this.candidateListeners = new Map();
         this.currentRoomId = null;
         this.isLive = false;
         this.viewerCount = 0;
         this.cameraEnabled = true;
         this.micEnabled = true;
+        this.viewersUnsubscribe = null;
+        this.offersUnsubscribe = null;
         this.roomRef = null;
-        this.viewersRef = null;
-        this.offersRef = null;
     }
 
     async startCamera() {
         try {
-            if (this.localStream) {
-                console.log('📷 Caméra déjà active');
-                return true;
-            }
-            console.log('📷 Demande d\'accès à la caméra...');
+            if (this.localStream) return true;
             this.localStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'user', width: 1280, height: 720 },
                 audio: { echoCancellation: true, noiseSuppression: true }
             });
-            console.log('✅ Caméra activée');
             return true;
         } catch (err) {
             console.error('❌ Erreur caméra:', err);
-            // Si la caméra échoue, on essaie sans vidéo
-            try {
-                console.log('📷 Tentative sans vidéo...');
-                this.localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: { echoCancellation: true, noiseSuppression: true }
-                });
-                this.cameraEnabled = false;
-                console.log('✅ Audio uniquement activé');
-                return true;
-            } catch (err2) {
-                throw new Error('Impossible d\'accéder à la caméra/micro: ' + err2.message);
-            }
+            throw new Error('Impossible d\'accéder à la caméra: ' + err.message);
         }
     }
 
     async startLive(roomId, onViewerUpdate) {
         if (!roomId) throw new Error('ID de salle requis');
-        console.log(`🎬 Démarrage du direct dans la salle: ${roomId}`);
-
         if (!this.localStream) {
             await this.startCamera();
         }
@@ -234,53 +215,52 @@ class LiveProfessor {
         this.currentRoomId = roomId;
         this.isLive = true;
 
-        // Créer la salle dans Firebase
-        this.roomRef = db.ref(`salles/${roomId}`);
-        await this.roomRef.remove();
-        console.log('🗑️ Ancienne salle supprimée');
-        
+        // Référence au document de la salle
+        this.roomRef = db.collection('salles').doc(roomId);
+
+        // Créer la salle
         await this.roomRef.set({
             professor: {
                 online: true,
                 startedAt: Date.now(),
-                name: auth.currentUser?.displayName || 'Professeur'
-            }
+                name: auth.currentUser?.displayName || 'Professeur',
+                uid: auth.currentUser?.uid
+            },
+            viewers: {},
+            createdAt: Date.now()
         });
-        console.log('✅ Salle créée dans Firebase');
-
-        this.roomRef.onDisconnect().remove();
 
         // Écouter les spectateurs
-        this.viewersRef = db.ref(`salles/${roomId}/viewers`);
-        this.viewersRef.on('value', (snapshot) => {
-            const viewers = snapshot.val() || {};
-            this.viewerCount = Object.keys(viewers).length;
-            console.log(`👥 ${this.viewerCount} spectateurs`);
-            if (onViewerUpdate) onViewerUpdate(this.viewerCount, viewers);
-        });
-
-        // Écouter les offres des étudiants
-        this.offersRef = db.ref(`salles/${roomId}/offers`);
-        this.offersRef.on('child_added', (snapshot) => {
-            const studentId = snapshot.key;
-            const offerData = snapshot.val();
-            console.log(`📨 Offre reçue de l'étudiant: ${studentId}`);
-            if (studentId && offerData && !this.peerConnections.has(studentId)) {
-                this.handleStudentOffer(studentId, offerData);
+        this.viewersUnsubscribe = this.roomRef.onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                const viewers = data.viewers || {};
+                this.viewerCount = Object.keys(viewers).length;
+                if (onViewerUpdate) onViewerUpdate(this.viewerCount, viewers);
             }
         });
 
-        console.log('✅ Direct lancé avec succès');
+        // Écouter les offres des étudiants (sous-collection)
+        this.offersUnsubscribe = db.collection('salles')
+            .doc(roomId)
+            .collection('offers')
+            .onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const studentId = change.doc.id;
+                        const offerData = change.doc.data();
+                        if (!this.peerConnections.has(studentId)) {
+                            this.handleStudentOffer(studentId, offerData);
+                        }
+                    }
+                });
+            });
+
         return true;
     }
 
     async handleStudentOffer(studentId, offerData) {
-        if (!this.localStream) {
-            console.warn('⚠️ Pas de flux local pour l\'étudiant', studentId);
-            return;
-        }
-
-        console.log(`🔗 Connexion de l'étudiant: ${studentId}`);
+        if (!this.localStream) return;
 
         try {
             const pc = new RTCPeerConnection(TURN_SERVERS);
@@ -290,99 +270,95 @@ class LiveProfessor {
             this.localStream.getTracks().forEach(track => {
                 try {
                     pc.addTrack(track, this.localStream);
-                    console.log(`➕ Track ajoutée: ${track.kind}`);
-                } catch(e) {
-                    console.warn("Erreur ajout track:", e);
-                }
+                } catch(e) {}
             });
 
-            // Gérer les candidats ICE du professeur
-            const candidatesRef = db.ref(`salles/${this.currentRoomId}/answers/${studentId}/profCandidates`);
-            
+            // Gérer les candidats
+            const candidatesRef = db.collection('salles')
+                .doc(this.currentRoomId)
+                .collection('answers')
+                .doc(studentId)
+                .collection('profCandidates');
+
             pc.onicecandidate = (event) => {
                 if (event.candidate) {
-                    console.log(`🧊 Candidat ICE envoyé pour ${studentId}`);
-                    candidatesRef.push(event.candidate.toJSON());
+                    candidatesRef.add(event.candidate.toJSON());
                 }
             };
 
-            // État de la connexion
             pc.onconnectionstatechange = () => {
-                console.log(`🔗 État connexion ${studentId}:`, pc.connectionState);
                 if (pc.connectionState === 'connected') {
-                    console.log(`✅ Étudiant ${studentId} connecté !`);
+                    console.log(`✅ Étudiant ${studentId} connecté`);
                 }
-                if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
-                    console.log(`❌ Déconnexion de l'étudiant ${studentId}`);
-                    candidatesRef.remove().catch(() => {});
+                if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
                     pc.close();
                     this.peerConnections.delete(studentId);
                 }
             };
 
             // Configurer la connexion
-            console.log(`📨 Traitement de l'offre SDP de ${studentId}`);
             await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-            console.log(`📨 Création de la réponse SDP pour ${studentId}`);
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            console.log(`📨 Réponse SDP créée pour ${studentId}`);
 
             // Envoyer la réponse
-            await db.ref(`salles/${this.currentRoomId}/answers/${studentId}`).update({
-                sdp: answer.sdp,
-                type: answer.type,
-                timestamp: Date.now()
-            });
-            console.log(`✅ Réponse SDP envoyée à ${studentId}`);
+            await db.collection('salles')
+                .doc(this.currentRoomId)
+                .collection('answers')
+                .doc(studentId)
+                .set({
+                    sdp: answer.sdp,
+                    type: answer.type,
+                    timestamp: Date.now()
+                });
 
             // Écouter les candidats étudiants
-            const studentCandidatesRef = db.ref(`salles/${this.currentRoomId}/studentCandidates/${studentId}`);
-            this.candidateListeners.set(studentId, studentCandidatesRef);
-
-            studentCandidatesRef.on('child_added', (snapshot) => {
-                const candidateData = snapshot.val();
-                if (candidateData && pc.remoteDescription) {
-                    pc.addIceCandidate(new RTCIceCandidate(candidateData)).catch(e => {
-                        console.warn("Erreur ajout candidat étudiant:", e);
+            db.collection('salles')
+                .doc(this.currentRoomId)
+                .collection('studentCandidates')
+                .doc(studentId)
+                .collection('candidates')
+                .onSnapshot((snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const candidateData = change.doc.data();
+                            if (candidateData && pc.remoteDescription) {
+                                pc.addIceCandidate(new RTCIceCandidate(candidateData)).catch(() => {});
+                            }
+                        }
                     });
-                }
-            });
+                });
 
         } catch (err) {
-            console.error(`❌ Erreur connexion étudiant ${studentId}:`, err);
+            console.error(`❌ Erreur étudiant ${studentId}:`, err);
             this.peerConnections.delete(studentId);
         }
     }
 
     async stopLive() {
-        console.log('⏹️ Arrêt du direct...');
-        
-        // Nettoyer les candidats
         for (const [id, pc] of this.peerConnections) {
-            try {
-                await db.ref(`salles/${this.currentRoomId}/answers/${id}/profCandidates`).remove();
-            } catch(e) {}
             try { pc.close(); } catch(e) {}
         }
         this.peerConnections.clear();
 
-        for (const [id, ref] of this.candidateListeners) {
-            try { ref.off(); } catch(e) {}
+        if (this.viewersUnsubscribe) {
+            this.viewersUnsubscribe();
+            this.viewersUnsubscribe = null;
         }
-        this.candidateListeners.clear();
+        if (this.offersUnsubscribe) {
+            this.offersUnsubscribe();
+            this.offersUnsubscribe = null;
+        }
 
         if (this.currentRoomId) {
-            try { await db.ref(`salles/${this.currentRoomId}`).remove(); } catch(e) {}
+            try {
+                await db.collection('salles').doc(this.currentRoomId).delete();
+            } catch(e) {}
         }
-
-        if (this.viewersRef) this.viewersRef.off();
-        if (this.offersRef) this.offersRef.off();
 
         this.currentRoomId = null;
         this.isLive = false;
         this.viewerCount = 0;
-        console.log('✅ Direct arrêté');
         return true;
     }
 
@@ -480,7 +456,6 @@ const viewerList = document.getElementById('viewerList');
 function setStatus(msg, type = 'info') {
     statusBar.textContent = msg;
     statusBar.className = 'status-bar ' + type;
-    console.log(`📢 Status: ${msg} (${type})`);
 }
 
 function updateViewerList(viewers) {
@@ -517,7 +492,7 @@ function updateUserUI(user) {
         userEmail.textContent = user.email || '';
         loginPanel.style.display = 'none';
         mainPanel.style.display = 'block';
-        setStatus(`✅ Connecté en tant que ${user.displayName}. Vous pouvez lancer le direct.`, 'success');
+        setStatus(`✅ Connecté en tant que ${user.displayName}`, 'success');
     } else {
         loginPanel.style.display = 'block';
         mainPanel.style.display = 'none';
@@ -526,8 +501,6 @@ function updateUserUI(user) {
         statusBadge.textContent = '🔴 Direct Arrêté';
     }
 }
-
-// --- Événements ---
 
 loginBtn.onclick = async () => {
     try {
@@ -557,7 +530,6 @@ copyIdBtn.onclick = () => {
 };
 
 startBtn.onclick = async () => {
-    console.log('🟢 Clic sur "Lancer le direct"');
     let roomId = roomIdInput.value.trim() || generateRoomId();
     roomIdInput.value = roomId;
 
@@ -567,19 +539,13 @@ startBtn.onclick = async () => {
     setStatus('🎬 Lancement du direct...', 'loading');
 
     try {
-        console.log('📷 Démarrage de la caméra...');
         await professor.startCamera();
-        console.log('📷 Caméra démarrée');
-
-        // Afficher la vidéo locale
         if (professor.localStream) {
             localVideo.srcObject = professor.localStream;
             localVideo.style.display = 'block';
             videoPlaceholder.style.display = 'none';
-            console.log('📺 Vidéo locale affichée');
         }
 
-        console.log('🎬 Lancement du live...');
         await professor.startLive(roomId, (count, viewers) => {
             viewerBadge.textContent = `👁️ ${count} spectateurs`;
             updateViewerList(viewers);
@@ -593,25 +559,16 @@ startBtn.onclick = async () => {
         startBtn.textContent = '🔴 En direct';
         startBtn.className = 'btn btn-start';
         stopBtn.disabled = false;
-        console.log('✅ Direct lancé avec succès !');
 
     } catch (err) {
-        console.error('❌ Erreur lors du lancement:', err);
         setStatus('❌ ' + err.message, 'error');
         startBtn.disabled = false;
         startBtn.textContent = '▶️ Lancer le direct';
         startBtn.className = 'btn btn-start';
-        
-        // Cacher la vidéo en cas d'erreur
-        if (!professor.localStream || professor.localStream.getVideoTracks().length === 0) {
-            localVideo.style.display = 'none';
-            videoPlaceholder.style.display = 'flex';
-        }
     }
 };
 
 stopBtn.onclick = async () => {
-    console.log('🟥 Arrêt du direct...');
     stopBtn.disabled = true;
     await professor.stopLive();
 
@@ -624,25 +581,20 @@ stopBtn.onclick = async () => {
     startBtn.disabled = false;
     stopBtn.disabled = true;
     updateRoomDisplay(null);
-    
-    // Cacher la vidéo
     localVideo.style.display = 'none';
     videoPlaceholder.style.display = 'flex';
-    console.log('✅ Direct arrêté');
 };
 
 toggleCameraBtn.onclick = () => {
     const enabled = professor.toggleCamera();
     toggleCameraBtn.textContent = enabled ? '📷 Caméra' : '📷 Caméra OFF';
     toggleCameraBtn.classList.toggle('active', !enabled);
-    console.log(`📷 Caméra: ${enabled ? 'activée' : 'désactivée'}`);
 };
 
 toggleMicBtn.onclick = () => {
     const enabled = professor.toggleMic();
     toggleMicBtn.textContent = enabled ? '🎤 Micro' : '🎤 Micro OFF';
     toggleMicBtn.classList.toggle('active', !enabled);
-    console.log(`🎤 Micro: ${enabled ? 'activé' : 'désactivé'}`);
 };
 
 authManager.listen((user) => {
@@ -655,10 +607,6 @@ authManager.listen((user) => {
 });
 
 window.addEventListener('beforeunload', () => professor.cleanup());
-
-// --- Affichage des logs dans la console ---
-console.log('👨‍🏫 Application Professeur chargée');
-console.log('🔑 Connectez-vous pour commencer');
 </script>
 </body>
 </html>
