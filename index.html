@@ -19,7 +19,6 @@
         .badge-online{background:#4ade80;color:#1a1a2e}
         .badge-offline{background:#ef4444;color:#fff}
         .badge-viewers{background:#3b82f6;color:#fff}
-        .badge-pending{background:#f59e0b;color:#1a1a2e}
         .main-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px}
         .video-section{background:rgba(0,0,0,0.85);border-radius:20px;padding:20px;border:1px solid rgba(255,255,255,0.1)}
         .video-wrapper{position:relative;border-radius:12px;overflow:hidden;background:#000;min-height:450px}
@@ -43,7 +42,7 @@
         .btn-google:hover{background:#f0f0f0}
         .btn-logout{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:8px 16px;font-size:13px}
         .btn-logout:hover{background:rgba(239,68,68,0.3);border-color:#ef4444}
-        .btn-sm{padding:6px 14px;font-size:12px}
+        .btn-sm{padding:6px 12px;font-size:12px}
         .side-panel{display:flex;flex-direction:column;gap:20px}
         .card{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-radius:20px;padding:20px;border:1px solid rgba(255,255,255,0.08);color:#fff}
         .card h3{margin-bottom:15px;font-size:18px;display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.9)}
@@ -57,15 +56,9 @@
         .copy-btn{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:8px 15px;border-radius:6px;cursor:pointer;font-size:13px;transition:all .3s;margin-top:8px}
         .copy-btn:hover{background:rgba(255,255,255,0.2)}
         .viewer-list{max-height:300px;overflow-y:auto}
-        .viewer-item{padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,0.8);gap:10px;flex-wrap:wrap}
-        .viewer-item .info{display:flex;flex-direction:column;gap:2px}
-        .viewer-item .name{font-weight:500;color:#fff}
-        .viewer-item .status{font-size:12px}
-        .viewer-item .status.waiting{color:#f59e0b}
-        .viewer-item .status.approved{color:#4ade80}
-        .viewer-item .status.rejected{color:#ef4444}
-        .viewer-item .actions{display:flex;gap:6px}
-        .viewer-item .actions .btn{padding:4px 12px;font-size:12px;min-width:auto}
+        .viewer-item{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,0.8)}
+        .viewer-item .online{color:#4ade80;font-size:12px}
+        .viewer-item .waiting{color:#f59e0b;font-size:12px}
         .viewer-empty{color:rgba(255,255,255,0.3);text-align:center;padding:30px 20px}
         .status-bar{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-radius:12px;padding:15px 20px;color:rgba(255,255,255,0.8);margin-top:20px;text-align:center;border:1px solid rgba(255,255,255,0.05);transition:all .3s}
         .status-bar.error{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.3);color:#ef4444}
@@ -79,6 +72,7 @@
         .notification-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse 1.5s infinite;margin-left:6px}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         @media(max-width:768px){.main-grid{grid-template-columns:1fr}.header h1{font-size:20px}.user-info .name{font-size:12px}.user-info .email{display:none}.video-controls .btn{min-width:70px;font-size:13px;padding:10px 12px}.login-panel{padding:30px 20px;margin:30px 15px}}
+        .pending-badge{background:#f59e0b;color:#1a1a2e;padding:8px 16px;border-radius:50px;font-weight:bold;font-size:14px;display:none}
     </style>
 </head>
 <body>
@@ -106,7 +100,7 @@
                     </div>
                     <span class="badge badge-offline" id="statusBadge">🔴 Direct Arrêté</span>
                     <span class="badge badge-viewers" id="viewerBadge">👁️ 0 spectateurs</span>
-                    <span class="badge badge-pending" id="pendingBadge" style="display:none;">⏳ Demandes <span id="pendingCount">0</span><span class="notification-dot"></span></span>
+                    <span class="pending-badge" id="pendingBadge">⏳ <span id="pendingCount">0</span> en attente</span>
                 </div>
             </div>
 
@@ -143,7 +137,7 @@
                         </div>
                     </div>
                     <div class="card">
-                        <h3>👥 Spectateurs <span id="viewerCountDisplay" style="font-size:14px;color:rgba(255,255,255,0.5);">(0)</span></h3>
+                        <h3>👥 Spectateurs</h3>
                         <div id="viewerList" class="viewer-list">
                             <div class="viewer-empty">⏳ En attente de spectateurs...</div>
                         </div>
@@ -194,390 +188,305 @@ const TURN_SERVERS = {
     iceCandidatePoolSize: 10
 };
 
-class LiveProfessor {
-    constructor() {
-        this.localStream = null;
-        this.peerConnections = new Map();
-        this.currentRoomId = null;
-        this.isLive = false;
-        this.viewerCount = 0;
-        this.cameraEnabled = true;
-        this.micEnabled = true;
-        this.viewersUnsubscribe = null;
-        this.offersUnsubscribe = null;
-        this.roomRef = null;
-        this.pendingStudents = new Map();
-        this.approvedStudents = new Set();
-        this.autoApprove = false;
-        this.onPendingUpdate = null;
-    }
+let localStream = null;
+let peerConnections = new Map();
+let currentRoomId = null;
+let isLive = false;
+let autoApprove = false;
+let pendingStudents = new Map();
+let viewersUnsubscribe = null;
+let offersUnsubscribe = null;
 
-    setAutoApprove(value) {
-        this.autoApprove = value;
-    }
-
-    async startCamera() {
-        try {
-            if (this.localStream) return true;
-            this.localStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: 1280, height: 720 },
-                audio: { echoCancellation: true, noiseSuppression: true }
-            });
-            return true;
-        } catch (err) {
-            console.error('❌ Erreur caméra:', err);
-            throw new Error('Impossible d\'accéder à la caméra: ' + err.message);
-        }
-    }
-
-    async startLive(roomId, onViewerUpdate, onPendingUpdate) {
-        if (!roomId) throw new Error('ID de salle requis');
-        if (!this.localStream) {
-            await this.startCamera();
-        }
-
-        this.currentRoomId = roomId;
-        this.isLive = true;
-        this.onPendingUpdate = onPendingUpdate;
-
-        this.roomRef = db.collection('salles').doc(roomId);
-
-        await this.roomRef.set({
-            professor: {
-                online: true,
-                startedAt: Date.now(),
-                name: auth.currentUser?.displayName || 'Professeur',
-                uid: auth.currentUser?.uid
-            },
-            viewers: {},
-            pending: {},
-            approved: [],
-            createdAt: Date.now()
+async function startCamera() {
+    try {
+        if (localStream) return true;
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: 1280, height: 720 },
+            audio: { echoCancellation: true, noiseSuppression: true }
         });
+        return true;
+    } catch (err) {
+        console.error('❌ Erreur caméra:', err);
+        throw new Error('Impossible d\'accéder à la caméra: ' + err.message);
+    }
+}
 
-        this.viewersUnsubscribe = this.roomRef.onSnapshot((doc) => {
-            if (doc.exists) {
-                const data = doc.data();
-                const viewers = data.viewers || {};
-                const pending = data.pending || {};
-                const approved = data.approved || [];
-                
-                this.viewerCount = Object.keys(viewers).length;
-                this.pendingStudents = new Map(Object.entries(pending));
-                this.approvedStudents = new Set(approved);
-                
-                if (onViewerUpdate) onViewerUpdate(this.viewerCount, viewers, pending, approved);
-                if (this.onPendingUpdate) this.onPendingUpdate(this.pendingStudents.size);
+async function startLive(roomId) {
+    if (!roomId) throw new Error('ID de salle requis');
+    if (!localStream) {
+        await startCamera();
+    }
+
+    currentRoomId = roomId;
+    isLive = true;
+
+    const roomRef = db.collection('salles').doc(roomId);
+
+    await roomRef.set({
+        professor: {
+            online: true,
+            startedAt: Date.now(),
+            name: auth.currentUser?.displayName || 'Professeur',
+            uid: auth.currentUser?.uid
+        },
+        viewers: {},
+        pending: {},
+        approved: [],
+        createdAt: Date.now()
+    });
+
+    // Écouter les changements de la salle
+    viewersUnsubscribe = roomRef.onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            const viewers = data.viewers || {};
+            const pending = data.pending || {};
+            const approved = data.approved || [];
+            
+            // Mettre à jour l'interface
+            updateViewerList(viewers, pending, approved);
+            viewerBadge.textContent = `👁️ ${Object.keys(viewers).length} spectateurs`;
+            
+            const pendingCount = Object.keys(pending).length;
+            if (pendingCount > 0) {
+                document.getElementById('pendingBadge').style.display = 'inline-block';
+                document.getElementById('pendingCount').textContent = pendingCount;
+            } else {
+                document.getElementById('pendingBadge').style.display = 'none';
             }
+            
+            // Mettre à jour les demandes en attente
+            pendingStudents = new Map(Object.entries(pending));
+        }
+    });
+
+    // Écouter les offres
+    offersUnsubscribe = db.collection('salles')
+        .doc(roomId)
+        .collection('offers')
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    const studentId = change.doc.id;
+                    const offerData = change.doc.data();
+                    console.log(`📡 Offre reçue de ${studentId}`);
+                    
+                    // Vérifier si déjà approuvé
+                    db.collection('salles').doc(roomId).get().then(doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            const approved = data.approved || [];
+                            if (approved.includes(studentId)) {
+                                handleStudentOffer(studentId, offerData);
+                            } else {
+                                // Ajouter aux demandes en attente
+                                db.collection('salles').doc(roomId).update({
+                                    [`pending.${studentId}`]: {
+                                        name: offerData.name || 'Étudiant',
+                                        email: offerData.email || '',
+                                        timestamp: Date.now()
+                                    }
+                                });
+                                
+                                if (autoApprove) {
+                                    setTimeout(() => approveStudent(studentId), 1000);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
         });
 
-        this.offersUnsubscribe = db.collection('salles')
-            .doc(roomId)
+    return true;
+}
+
+async function approveStudent(studentId) {
+    if (!currentRoomId) return;
+    
+    console.log(`✅ Approbation de ${studentId}`);
+    
+    try {
+        // Récupérer l'offre
+        const offerDoc = await db.collection('salles')
+            .doc(currentRoomId)
             .collection('offers')
+            .doc(studentId)
+            .get();
+            
+        if (!offerDoc.exists) {
+            console.warn('Offre non trouvée pour', studentId);
+            return;
+        }
+        
+        const offerData = offerDoc.data();
+        
+        // Ajouter aux approuvés
+        await db.collection('salles').doc(currentRoomId).update({
+            [`approved`]: firebase.firestore.FieldValue.arrayUnion(studentId),
+            [`pending.${studentId}`]: firebase.firestore.FieldValue.delete()
+        });
+        
+        // Traiter la connexion
+        await handleStudentOffer(studentId, offerData);
+        
+    } catch (err) {
+        console.error('Erreur approbation:', err);
+    }
+}
+
+async function rejectStudent(studentId) {
+    if (!currentRoomId) return;
+    
+    console.log(`❌ Rejet de ${studentId}`);
+    
+    try {
+        await db.collection('salles').doc(currentRoomId).update({
+            [`pending.${studentId}`]: firebase.firestore.FieldValue.delete()
+        });
+    } catch (err) {
+        console.error('Erreur rejet:', err);
+    }
+}
+
+async function handleStudentOffer(studentId, offerData) {
+    if (!localStream) {
+        console.warn('Pas de flux local');
+        return;
+    }
+
+    try {
+        console.log(`📡 Connexion à ${studentId}`);
+        const pc = new RTCPeerConnection(TURN_SERVERS);
+        peerConnections.set(studentId, pc);
+
+        // Ajouter les tracks
+        localStream.getTracks().forEach(track => {
+            pc.addTrack(track, localStream);
+        });
+
+        // Gérer les candidats
+        const candidatesRef = db.collection('salles')
+            .doc(currentRoomId)
+            .collection('answers')
+            .doc(studentId)
+            .collection('profCandidates');
+
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                candidatesRef.add(event.candidate.toJSON()).catch(() => {});
+            }
+        };
+
+        pc.onconnectionstatechange = () => {
+            console.log(`📡 État ${studentId}: ${pc.connectionState}`);
+            if (pc.connectionState === 'connected') {
+                console.log(`✅ ${studentId} connecté`);
+            }
+            if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+                pc.close();
+                peerConnections.delete(studentId);
+            }
+        };
+
+        // Configurer la connexion
+        await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        // Envoyer la réponse
+        await db.collection('salles')
+            .doc(currentRoomId)
+            .collection('answers')
+            .doc(studentId)
+            .set({
+                sdp: answer.sdp,
+                type: answer.type,
+                timestamp: Date.now()
+            });
+
+        console.log(`✅ Réponse envoyée à ${studentId}`);
+
+        // Écouter les candidats étudiants
+        db.collection('salles')
+            .doc(currentRoomId)
+            .collection('studentCandidates')
+            .doc(studentId)
+            .collection('candidates')
             .onSnapshot((snapshot) => {
                 snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        const studentId = change.doc.id;
-                        const offerData = change.doc.data();
-                        console.log(`📡 Offre reçue de l'étudiant ${studentId}`);
-                        
-                        // Vérifier si l'étudiant est déjà approuvé
-                        if (this.approvedStudents.has(studentId)) {
-                            this.handleStudentOffer(studentId, offerData);
-                        } else {
-                            // Ajouter à la liste des demandes en attente
-                            this.addPendingStudent(studentId, offerData);
-                        }
+                    if (change.type === 'added' && pc.remoteDescription) {
+                        const candidateData = change.doc.data();
+                        try {
+                            pc.addIceCandidate(new RTCIceCandidate(candidateData)).catch(() => {});
+                        } catch(e) {}
                     }
                 });
             });
 
-        return true;
-    }
-
-    async addPendingStudent(studentId, offerData) {
-        const user = auth.currentUser;
-        const studentName = offerData.name || 'Étudiant';
-        
-        // Ajouter à Firestore
-        await this.roomRef.update({
-            [`pending.${studentId}`]: {
-                name: studentName,
-                email: offerData.email || '',
-                timestamp: Date.now(),
-                offer: offerData
-            }
-        });
-        
-        console.log(`⏳ Demande en attente de ${studentName}`);
-        
-        // Si auto-approve est activé, approuver automatiquement
-        if (this.autoApprove) {
-            setTimeout(() => {
-                this.approveStudent(studentId);
-            }, 1000);
-        }
-    }
-
-    async approveStudent(studentId) {
-        if (!this.currentRoomId) return;
-        
-        console.log(`✅ Approbation de l'étudiant ${studentId}`);
-        
-        try {
-            // Récupérer l'offre
-            const pendingData = this.pendingStudents.get(studentId);
-            if (!pendingData) {
-                console.warn('Aucune donnée en attente pour', studentId);
-                return;
-            }
-            
-            // Ajouter aux approuvés
-            await this.roomRef.update({
-                [`approved`]: firebase.firestore.FieldValue.arrayUnion(studentId),
-                [`pending.${studentId}`]: firebase.firestore.FieldValue.delete()
-            });
-            
-            // Traiter la connexion WebRTC
-            this.handleStudentOffer(studentId, pendingData.offer || pendingData);
-            
-            this.approvedStudents.add(studentId);
-            this.pendingStudents.delete(studentId);
-            
-            if (this.onPendingUpdate) this.onPendingUpdate(this.pendingStudents.size);
-            
-        } catch (err) {
-            console.error('Erreur approbation:', err);
-        }
-    }
-
-    async rejectStudent(studentId) {
-        if (!this.currentRoomId) return;
-        
-        console.log(`❌ Rejet de l'étudiant ${studentId}`);
-        
-        try {
-            await this.roomRef.update({
-                [`pending.${studentId}`]: firebase.firestore.FieldValue.delete()
-            });
-            
-            this.pendingStudents.delete(studentId);
-            
-            if (this.onPendingUpdate) this.onPendingUpdate(this.pendingStudents.size);
-        } catch (err) {
-            console.error('Erreur rejet:', err);
-        }
-    }
-
-    async handleStudentOffer(studentId, offerData) {
-        if (!this.localStream) {
-            console.warn('Pas de flux local, offre ignorée');
-            return;
-        }
-
-        try {
-            console.log(`📡 Traitement de l'offre de ${studentId}`);
-            const pc = new RTCPeerConnection(TURN_SERVERS);
-            this.peerConnections.set(studentId, pc);
-
-            this.localStream.getTracks().forEach(track => {
-                pc.addTrack(track, this.localStream);
-                console.log(`➕ Track ajouté: ${track.kind}`);
-            });
-
-            const candidatesRef = db.collection('salles')
-                .doc(this.currentRoomId)
-                .collection('answers')
-                .doc(studentId)
-                .collection('profCandidates');
-
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    candidatesRef.add(event.candidate.toJSON()).catch(() => {});
-                }
-            };
-
-            pc.onconnectionstatechange = () => {
-                console.log(`📡 État connexion ${studentId}: ${pc.connectionState}`);
-                if (pc.connectionState === 'connected') {
-                    console.log(`✅ Étudiant ${studentId} connecté`);
-                }
-                if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-                    console.log(`❌ ${studentId} déconnecté`);
-                    pc.close();
-                    this.peerConnections.delete(studentId);
-                }
-            };
-
-            await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-
-            await db.collection('salles')
-                .doc(this.currentRoomId)
-                .collection('answers')
-                .doc(studentId)
-                .set({
-                    sdp: answer.sdp,
-                    type: answer.type,
-                    timestamp: Date.now()
-                });
-
-            console.log(`✅ Réponse envoyée à l'étudiant ${studentId}`);
-
-            db.collection('salles')
-                .doc(this.currentRoomId)
-                .collection('studentCandidates')
-                .doc(studentId)
-                .collection('candidates')
-                .onSnapshot((snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        if (change.type === 'added' && pc.remoteDescription) {
-                            const candidateData = change.doc.data();
-                            try {
-                                pc.addIceCandidate(new RTCIceCandidate(candidateData)).catch(() => {});
-                            } catch(e) {}
-                        }
-                    });
-                });
-
-        } catch (err) {
-            console.error(`❌ Erreur avec ${studentId}:`, err);
-            this.peerConnections.delete(studentId);
-        }
-    }
-
-    async stopLive() {
-        for (const [id, pc] of this.peerConnections) {
-            try { pc.close(); } catch(e) {}
-        }
-        this.peerConnections.clear();
-
-        if (this.viewersUnsubscribe) {
-            this.viewersUnsubscribe();
-            this.viewersUnsubscribe = null;
-        }
-        if (this.offersUnsubscribe) {
-            this.offersUnsubscribe();
-            this.offersUnsubscribe = null;
-        }
-
-        if (this.currentRoomId) {
-            try {
-                await db.collection('salles').doc(this.currentRoomId).delete();
-            } catch(e) {}
-        }
-
-        this.currentRoomId = null;
-        this.isLive = false;
-        this.viewerCount = 0;
-        this.pendingStudents.clear();
-        this.approvedStudents.clear();
-        return true;
-    }
-
-    toggleCamera() {
-        if (!this.localStream) return false;
-        const track = this.localStream.getVideoTracks()[0];
-        if (track) {
-            this.cameraEnabled = !this.cameraEnabled;
-            track.enabled = this.cameraEnabled;
-            return this.cameraEnabled;
-        }
-        return false;
-    }
-
-    toggleMic() {
-        if (!this.localStream) return false;
-        const track = this.localStream.getAudioTracks()[0];
-        if (track) {
-            this.micEnabled = !this.micEnabled;
-            track.enabled = this.micEnabled;
-            return this.micEnabled;
-        }
-        return false;
-    }
-
-    cleanup() {
-        this.stopLive();
-        if (this.localStream) {
-            this.localStream.getTracks().forEach(t => t.stop());
-            this.localStream = null;
-        }
+    } catch (err) {
+        console.error(`❌ Erreur avec ${studentId}:`, err);
+        peerConnections.delete(studentId);
     }
 }
 
-class AuthManager {
-    constructor() {
-        this.currentUser = null;
-        this.isAuthenticated = false;
-        this.onAuthChange = null;
+async function stopLive() {
+    for (const [id, pc] of peerConnections) {
+        try { pc.close(); } catch(e) {}
+    }
+    peerConnections.clear();
+
+    if (viewersUnsubscribe) {
+        viewersUnsubscribe();
+        viewersUnsubscribe = null;
+    }
+    if (offersUnsubscribe) {
+        offersUnsubscribe();
+        offersUnsubscribe = null;
     }
 
-    async loginWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        const result = await auth.signInWithPopup(provider);
-        this.currentUser = result.user;
-        this.isAuthenticated = true;
-        return this.currentUser;
+    if (currentRoomId) {
+        try {
+            await db.collection('salles').doc(currentRoomId).delete();
+        } catch(e) {}
     }
 
-    async logout() {
-        await auth.signOut();
-        this.currentUser = null;
-        this.isAuthenticated = false;
-    }
+    currentRoomId = null;
+    isLive = false;
+    pendingStudents.clear();
+}
 
-    listen(callback) {
-        this.onAuthChange = callback;
-        auth.onAuthStateChanged((user) => {
-            this.currentUser = user;
-            this.isAuthenticated = !!user;
-            if (this.onAuthChange) this.onAuthChange(this.currentUser);
-        });
+function toggleCamera() {
+    if (!localStream) return false;
+    const track = localStream.getVideoTracks()[0];
+    if (track) {
+        const enabled = !track.enabled;
+        track.enabled = enabled;
+        return enabled;
+    }
+    return false;
+}
+
+function toggleMic() {
+    if (!localStream) return false;
+    const track = localStream.getAudioTracks()[0];
+    if (track) {
+        const enabled = !track.enabled;
+        track.enabled = enabled;
+        return enabled;
+    }
+    return false;
+}
+
+function cleanup() {
+    stopLive();
+    if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
     }
 }
 
-const authManager = new AuthManager();
-const professor = new LiveProfessor();
-
-const loginPanel = document.getElementById('loginPanel');
-const loginBtn = document.getElementById('loginBtn');
-const loginStatus = document.getElementById('loginStatus');
-const mainPanel = document.getElementById('mainPanel');
-const logoutBtn = document.getElementById('logoutBtn');
-const userAvatar = document.getElementById('userAvatar');
-const userName = document.getElementById('userName');
-const userEmail = document.getElementById('userEmail');
-
-const localVideo = document.getElementById('localVideo');
-const videoPlaceholder = document.getElementById('videoPlaceholder');
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const toggleCameraBtn = document.getElementById('toggleCameraBtn');
-const toggleMicBtn = document.getElementById('toggleMicBtn');
-const roomIdInput = document.getElementById('roomId');
-const roomIdDisplay = document.getElementById('roomIdDisplay');
-const displayedRoomId = document.getElementById('displayedRoomId');
-const generateIdBtn = document.getElementById('generateIdBtn');
-const copyIdBtn = document.getElementById('copyIdBtn');
-const statusBar = document.getElementById('statusBar');
-const statusBadge = document.getElementById('statusBadge');
-const viewerBadge = document.getElementById('viewerBadge');
-const viewerList = document.getElementById('viewerList');
-const pendingBadge = document.getElementById('pendingBadge');
-const pendingCount = document.getElementById('pendingCount');
-const autoApproveBtn = document.getElementById('autoApproveBtn');
-const viewerCountDisplay = document.getElementById('viewerCountDisplay');
-
-let autoApprove = false;
-
-function setStatus(msg, type = 'info') {
-    statusBar.textContent = msg;
-    statusBar.className = 'status-bar ' + type;
-}
-
+// Fonctions UI
 function updateViewerList(viewers, pending, approved) {
     const viewerKeys = Object.keys(viewers || {});
     const pendingKeys = Object.keys(pending || {});
@@ -585,40 +494,32 @@ function updateViewerList(viewers, pending, approved) {
     
     let html = '';
     
-    // Afficher les demandes en attente
     if (pendingKeys.length > 0) {
         html += `<div style="padding:8px 12px;background:rgba(245,158,11,0.1);border-radius:8px;margin-bottom:10px;color:#f59e0b;font-size:13px;font-weight:bold;">⏳ Demandes en attente (${pendingKeys.length})</div>`;
         
         pendingKeys.forEach(id => {
             const data = pending[id];
             html += `
-                <div class="viewer-item" style="background:rgba(245,158,11,0.05);border-radius:8px;margin-bottom:5px;">
-                    <div class="info">
-                        <span class="name">${data.name || 'Étudiant'}</span>
-                        <span class="status waiting">⏳ En attente d'approbation</span>
-                    </div>
-                    <div class="actions">
-                        <button class="btn btn-success btn-sm" onclick="approveStudent('${id}')">✅ Accepter</button>
-                        <button class="btn btn-danger btn-sm" onclick="rejectStudent('${id}')">❌ Refuser</button>
+                <div class="viewer-item" style="background:rgba(245,158,11,0.05);border-radius:8px;margin-bottom:5px;flex-wrap:wrap;">
+                    <span>${data.name || 'Étudiant'} <span class="waiting">⏳ En attente</span></span>
+                    <div style="display:flex;gap:5px;">
+                        <button class="btn btn-success btn-sm" onclick="approveStudent('${id}')">✅</button>
+                        <button class="btn btn-danger btn-sm" onclick="rejectStudent('${id}')">❌</button>
                     </div>
                 </div>
             `;
         });
     }
     
-    // Afficher les spectateurs approuvés
     const approvedViewers = viewerKeys.filter(id => approvedSet.has(id));
     if (approvedViewers.length > 0) {
-        html += `<div style="padding:8px 12px;margin-top:10px;color:rgba(255,255,255,0.5);font-size:13px;">✅ Spectateurs connectés (${approvedViewers.length})</div>`;
+        html += `<div style="padding:8px 12px;margin-top:10px;color:rgba(255,255,255,0.5);font-size:13px;">✅ Connectés (${approvedViewers.length})</div>`;
         
         approvedViewers.forEach(id => {
             const data = viewers[id];
             html += `
                 <div class="viewer-item">
-                    <div class="info">
-                        <span class="name">${data.name || 'Étudiant'}</span>
-                        <span class="status approved">🟢 En direct</span>
-                    </div>
+                    <span>${data.name || 'Étudiant'} <span class="online">🟢 En direct</span></span>
                 </div>
             `;
         });
@@ -629,27 +530,12 @@ function updateViewerList(viewers, pending, approved) {
     }
     
     viewerList.innerHTML = html;
-    viewerCountDisplay.textContent = `(${viewerKeys.length})`;
 }
 
-function updatePendingBadge(count) {
-    if (count > 0) {
-        pendingBadge.style.display = 'inline-flex';
-        pendingCount.textContent = count;
-        pendingBadge.classList.add('badge-pending');
-    } else {
-        pendingBadge.style.display = 'none';
-    }
+function setStatus(msg, type = 'info') {
+    statusBar.textContent = msg;
+    statusBar.className = 'status-bar ' + type;
 }
-
-// Fonctions globales pour les boutons d'approbation
-window.approveStudent = function(studentId) {
-    professor.approveStudent(studentId);
-};
-
-window.rejectStudent = function(studentId) {
-    professor.rejectStudent(studentId);
-};
 
 function generateRoomId() {
     return 'cours_' + Math.random().toString(36).substring(2, 8);
@@ -681,10 +567,44 @@ function updateUserUI(user) {
     }
 }
 
+// Rendre les fonctions globales pour les boutons HTML
+window.approveStudent = approveStudent;
+window.rejectStudent = rejectStudent;
+
+// Éléments DOM
+const loginPanel = document.getElementById('loginPanel');
+const loginBtn = document.getElementById('loginBtn');
+const loginStatus = document.getElementById('loginStatus');
+const mainPanel = document.getElementById('mainPanel');
+const logoutBtn = document.getElementById('logoutBtn');
+const userAvatar = document.getElementById('userAvatar');
+const userName = document.getElementById('userName');
+const userEmail = document.getElementById('userEmail');
+
+const localVideo = document.getElementById('localVideo');
+const videoPlaceholder = document.getElementById('videoPlaceholder');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+const toggleMicBtn = document.getElementById('toggleMicBtn');
+const roomIdInput = document.getElementById('roomId');
+const roomIdDisplay = document.getElementById('roomIdDisplay');
+const displayedRoomId = document.getElementById('displayedRoomId');
+const generateIdBtn = document.getElementById('generateIdBtn');
+const copyIdBtn = document.getElementById('copyIdBtn');
+const statusBar = document.getElementById('statusBar');
+const statusBadge = document.getElementById('statusBadge');
+const viewerBadge = document.getElementById('viewerBadge');
+const viewerList = document.getElementById('viewerList');
+const autoApproveBtn = document.getElementById('autoApproveBtn');
+
+// Événements
 loginBtn.onclick = async () => {
     try {
         loginBtn.disabled = true;
-        await authManager.loginWithGoogle();
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await auth.signInWithPopup(provider);
     } catch (err) {
         loginStatus.textContent = '❌ ' + err.message;
         loginBtn.disabled = false;
@@ -692,8 +612,8 @@ loginBtn.onclick = async () => {
 };
 
 logoutBtn.onclick = async () => {
-    if (professor.isLive) await professor.stopLive();
-    await authManager.logout();
+    await stopLive();
+    await auth.signOut();
 };
 
 generateIdBtn.onclick = () => {
@@ -710,7 +630,6 @@ copyIdBtn.onclick = () => {
 
 autoApproveBtn.onclick = () => {
     autoApprove = !autoApprove;
-    professor.setAutoApprove(autoApprove);
     autoApproveBtn.textContent = autoApprove ? '🤖 Auto: ON' : '🤖 Auto: OFF';
     autoApproveBtn.style.background = autoApprove ? '#4ade80' : '#64748b';
     autoApproveBtn.style.color = autoApprove ? '#1a1a2e' : '#fff';
@@ -727,20 +646,14 @@ startBtn.onclick = async () => {
     setStatus('🎬 Lancement du direct...', 'loading');
 
     try {
-        await professor.startCamera();
-        if (professor.localStream) {
-            localVideo.srcObject = professor.localStream;
+        await startCamera();
+        if (localStream) {
+            localVideo.srcObject = localStream;
             localVideo.style.display = 'block';
             videoPlaceholder.style.display = 'none';
         }
 
-        await professor.startLive(roomId, (count, viewers, pending, approved) => {
-            viewerBadge.textContent = `👁️ ${count} spectateurs`;
-            updateViewerList(viewers, pending, approved);
-            updatePendingBadge(Object.keys(pending || {}).length);
-        }, (pendingCount) => {
-            updatePendingBadge(pendingCount);
-        });
+        await startLive(roomId);
 
         updateRoomDisplay(roomId);
         setStatus(`🎬 DIRECT LANCÉ ! Salle: ${roomId}`, 'success');
@@ -750,12 +663,6 @@ startBtn.onclick = async () => {
         startBtn.textContent = '🔴 En direct';
         startBtn.className = 'btn btn-start';
         stopBtn.disabled = false;
-
-        // Appliquer le mode auto-approbation
-        professor.setAutoApprove(autoApprove);
-        if (autoApprove) {
-            setStatus('🤖 Mode auto-approbation activé - les étudiants seront acceptés automatiquement', 'warning');
-        }
 
     } catch (err) {
         setStatus('❌ ' + err.message, 'error');
@@ -767,7 +674,7 @@ startBtn.onclick = async () => {
 
 stopBtn.onclick = async () => {
     stopBtn.disabled = true;
-    await professor.stopLive();
+    await stopLive();
 
     setStatus('⏹️ Direct arrêté', 'success');
     statusBadge.className = 'badge badge-offline';
@@ -780,23 +687,24 @@ stopBtn.onclick = async () => {
     updateRoomDisplay(null);
     localVideo.style.display = 'none';
     videoPlaceholder.style.display = 'flex';
-    updatePendingBadge(0);
+    document.getElementById('pendingBadge').style.display = 'none';
     viewerList.innerHTML = '<div class="viewer-empty">⏳ En attente de spectateurs...</div>';
 };
 
 toggleCameraBtn.onclick = () => {
-    const enabled = professor.toggleCamera();
+    const enabled = toggleCamera();
     toggleCameraBtn.textContent = enabled ? '📷 Caméra' : '📷 Caméra OFF';
     toggleCameraBtn.classList.toggle('active', !enabled);
 };
 
 toggleMicBtn.onclick = () => {
-    const enabled = professor.toggleMic();
+    const enabled = toggleMic();
     toggleMicBtn.textContent = enabled ? '🎤 Micro' : '🎤 Micro OFF';
     toggleMicBtn.classList.toggle('active', !enabled);
 };
 
-authManager.listen((user) => {
+// Auth
+auth.onAuthStateChanged((user) => {
     updateUserUI(user);
     if (user) {
         const defaultId = generateRoomId();
@@ -805,7 +713,7 @@ authManager.listen((user) => {
     }
 });
 
-window.addEventListener('beforeunload', () => professor.cleanup());
+window.addEventListener('beforeunload', cleanup);
 </script>
 </body>
 </html>
