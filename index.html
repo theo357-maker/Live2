@@ -5,16 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Étudiant — Direct</title>
 
-<!-- Bootstrap 5 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- Bootstrap Icons -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
 <style>
 :root{
   --app-bg:#050b16;
   --app-surface:#0d1524;
-  --app-surface-2:#131e33;
   --app-border:rgba(255,255,255,.08);
   --app-border-strong:rgba(255,255,255,.14);
   --app-text:#e6edf7;
@@ -25,18 +22,12 @@
   --app-danger:#ef3340;
 }
 
-*{
-  -webkit-tap-highlight-color:transparent;
-}
+*{ -webkit-tap-highlight-color:transparent; }
 
 html,body{
-  margin:0;
-  padding:0;
-  width:100%;
-  height:100%;
+  margin:0; padding:0; width:100%; height:100%;
   overflow:hidden;
-  background:var(--app-bg);
-  color:var(--app-text);
+  background:var(--app-bg); color:var(--app-text);
   font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 
@@ -45,20 +36,14 @@ button{outline:none !important;}
 /* =========================================================
    CONNEXION
    ========================================================= */
-
 #login{
-  position:fixed;
-  inset:0;
-  z-index:9999;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  position:fixed; inset:0; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
   padding:24px;
   background:
     radial-gradient(circle at 50% 20%,#17345d 0%,transparent 45%),
     linear-gradient(145deg,#050b16,#0b1424 60%,#050914);
 }
-
 .login-box{
   width:min(420px,100%);
   text-align:center;
@@ -70,84 +55,55 @@ button{outline:none !important;}
   backdrop-filter:blur(25px);
   -webkit-backdrop-filter:blur(25px);
 }
-
 .login-icon{
-  width:72px;
-  height:72px;
+  width:72px; height:72px;
   margin:0 auto 20px;
   border-radius:20px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:32px;
-  color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px; color:#fff;
   background:linear-gradient(145deg,var(--app-primary),var(--app-primary-2));
   box-shadow:0 12px 35px rgba(37,99,235,.35);
 }
-
 .login-box h1{
-  margin:0 0 8px;
-  font-size:24px;
-  font-weight:700;
-  letter-spacing:-.4px;
+  margin:0 0 8px; font-size:24px; font-weight:700; letter-spacing:-.4px;
 }
-
 .login-box p{
-  margin:0 0 25px;
-  color:var(--app-text-muted);
-  font-size:14px;
+  margin:0 0 25px; color:var(--app-text-muted); font-size:14px;
 }
-
 .btn-google{
-  width:100%;
-  padding:14px 20px;
+  width:100%; padding:14px 20px;
   border-radius:14px;
-  background:#fff;
-  color:#111827;
-  font-size:15px;
-  font-weight:600;
-  border:0;
+  background:#fff; color:#111827;
+  font-size:15px; font-weight:600; border:0;
   transition:transform .15s,box-shadow .2s;
   box-shadow:0 10px 30px rgba(0,0,0,.18);
 }
-
 .btn-google:hover{
   transform:translateY(-1px);
   box-shadow:0 14px 36px rgba(0,0,0,.28);
   color:#111827;
 }
-
 #loginError{
-  color:#fca5a5;
-  font-size:12px;
-  margin-top:14px;
-  min-height:18px;
+  color:#fca5a5; font-size:12px; margin-top:14px; min-height:18px;
 }
 
 /* =========================================================
    APPLICATION
    ========================================================= */
-
 #app{
   display:none;
   position:relative;
-  width:100%;
-  height:100%;
+  width:100%; height:100%;
   background:#000;
 }
-
 #remoteVideo{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
+  position:absolute; inset:0;
+  width:100%; height:100%;
   object-fit:cover;
   background:#070b12;
 }
-
 .video-overlay{
-  position:absolute;
-  inset:0;
+  position:absolute; inset:0;
   pointer-events:none;
   background:
     linear-gradient(to bottom,rgba(0,0,0,.58),transparent 25%),
@@ -157,81 +113,41 @@ button{outline:none !important;}
 /* =========================================================
    TOP BAR
    ========================================================= */
-
 .top-bar{
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
+  position:absolute; top:0; left:0; right:0;
   z-index:5;
   padding:max(20px,env(safe-area-inset-top)) 20px 20px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display:flex; align-items:center; justify-content:space-between;
   pointer-events:none;
 }
-
-.top-left{
-  display:flex;
-  align-items:center;
-  gap:13px;
-}
-
+.top-left{display:flex; align-items:center; gap:13px;}
 .app-avatar{
-  width:45px;
-  height:45px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  width:45px; height:45px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
   background:rgba(15,23,42,.75);
   border:1px solid var(--app-border-strong);
   backdrop-filter:blur(15px);
   -webkit-backdrop-filter:blur(15px);
-  font-size:20px;
-  color:#93c5fd;
+  font-size:20px; color:#93c5fd;
 }
-
-.room-info{
-  display:flex;
-  flex-direction:column;
-}
-
-.room-title{
-  font-size:15px;
-  font-weight:700;
-}
-
-.room-subtitle{
-  font-size:12px;
-  color:#cbd5e1;
-  margin-top:3px;
-}
-
+.room-info{display:flex; flex-direction:column;}
+.room-title{font-size:15px; font-weight:700;}
+.room-subtitle{font-size:12px; color:#cbd5e1; margin-top:3px;}
 .live-badge{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  padding:9px 13px;
-  border-radius:30px;
+  display:flex; align-items:center; gap:7px;
+  padding:9px 13px; border-radius:30px;
   background:rgba(15,23,42,.70);
   border:1px solid var(--app-border-strong);
   backdrop-filter:blur(15px);
   -webkit-backdrop-filter:blur(15px);
-  font-size:11px;
-  font-weight:700;
-  letter-spacing:.3px;
+  font-size:11px; font-weight:700; letter-spacing:.3px;
 }
-
 .live-dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
+  width:8px; height:8px; border-radius:50%;
   background:var(--app-success);
   box-shadow:0 0 10px var(--app-success);
   animation:pulse 2s ease-in-out infinite;
 }
-
 @keyframes pulse{
   0%,100%{opacity:1;}
   50%{opacity:.4;}
@@ -240,27 +156,20 @@ button{outline:none !important;}
 /* =========================================================
    STATUT
    ========================================================= */
-
 #status{
-  position:absolute;
-  z-index:10;
-  top:82px;
-  left:50%;
+  position:absolute; z-index:10;
+  top:82px; left:50%;
   transform:translateX(-50%);
   max-width:90%;
-  padding:9px 16px;
-  border-radius:20px;
+  padding:9px 16px; border-radius:20px;
   background:rgba(15,23,42,.78);
   border:1px solid var(--app-border);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
-  color:#dbeafe;
-  font-size:12px;
-  text-align:center;
+  color:#dbeafe; font-size:12px; text-align:center;
   white-space:nowrap;
   transition:color .25s;
 }
-
 #status.status.ok{color:#86efac;}
 #status.status.err{color:#fca5a5;}
 #status.status.wait{color:#fde68a;}
@@ -268,101 +177,65 @@ button{outline:none !important;}
 /* =========================================================
    VIDÉO LOCALE FLOTTANTE
    ========================================================= */
-
 .local-preview{
-  position:absolute;
-  z-index:8;
-  right:18px;
-  top:90px;
-  width:120px;
-  height:170px;
-  border-radius:18px;
-  overflow:hidden;
+  position:absolute; z-index:8;
+  right:18px; top:90px;
+  width:120px; height:170px;
+  border-radius:18px; overflow:hidden;
   background:#101827;
   border:2px solid rgba(255,255,255,.22);
   box-shadow:0 15px 40px rgba(0,0,0,.45);
   display:none;
 }
-
 .local-preview.active{display:block;}
-
 #localVideo{
-  width:100%;
-  height:100%;
+  width:100%; height:100%;
   object-fit:cover;
   background:#050505;
 }
-
 .preview-label{
   position:absolute;
-  left:8px;
-  bottom:8px;
+  left:8px; bottom:8px;
   padding:5px 10px;
   border-radius:8px;
   background:rgba(0,0,0,.55);
-  font-size:10px;
-  font-weight:600;
-  display:flex;
-  align-items:center;
-  gap:5px;
+  font-size:10px; font-weight:600;
+  display:flex; align-items:center; gap:5px;
 }
 
 /* =========================================================
    MESSAGE AVANT CONNEXION
    ========================================================= */
-
 .waiting{
-  position:absolute;
-  inset:0;
-  z-index:2;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  padding:30px;
+  position:absolute; inset:0; z-index:2;
+  display:flex; flex-direction:column;
+  justify-content:center; align-items:center;
+  text-align:center; padding:30px;
   background:
     radial-gradient(circle at center,#14243d,transparent 50%),
     #050b16;
 }
-
 .waiting-icon{
-  width:90px;
-  height:90px;
+  width:90px; height:90px;
   border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:38px;
-  color:#93c5fd;
+  display:flex; align-items:center; justify-content:center;
+  font-size:38px; color:#93c5fd;
   background:rgba(37,99,235,.16);
   border:1px solid rgba(96,165,250,.25);
   margin-bottom:22px;
 }
-
-.waiting h2{
-  margin:0 0 8px;
-  font-size:21px;
-  font-weight:700;
-}
-
+.waiting h2{margin:0 0 8px; font-size:21px; font-weight:700;}
 .waiting p{
-  margin:0;
-  color:var(--app-text-muted);
-  max-width:320px;
-  line-height:1.5;
-  font-size:14px;
+  margin:0; color:var(--app-text-muted);
+  max-width:320px; line-height:1.5; font-size:14px;
 }
 
 /* =========================================================
    PANNEAU DE CONNEXION
    ========================================================= */
-
 .join-panel{
-  position:absolute;
-  z-index:20;
-  left:50%;
-  top:50%;
+  position:absolute; z-index:20;
+  left:50%; top:50%;
   transform:translate(-50%,-50%);
   width:min(400px,calc(100% - 36px));
   padding:26px;
@@ -373,188 +246,149 @@ button{outline:none !important;}
   backdrop-filter:blur(25px);
   -webkit-backdrop-filter:blur(25px);
 }
-
 .join-panel.hidden{display:none;}
-
 .join-panel h2{
-  margin:0 0 7px;
-  font-size:19px;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  gap:10px;
+  margin:0 0 7px; font-size:19px; font-weight:700;
+  display:flex; align-items:center; gap:10px;
 }
-
 .join-panel h2 i{color:#93c5fd;}
-
 .join-panel p{
-  margin:0 0 18px;
-  color:var(--app-text-muted);
-  font-size:13px;
-  line-height:1.5;
+  margin:0 0 18px; color:var(--app-text-muted);
+  font-size:13px; line-height:1.5;
 }
-
 .room-input{
-  width:100%;
-  padding:13px 15px;
+  width:100%; padding:13px 15px;
   border-radius:13px;
-  border:1px solid #334155;
-  background:#0b1220;
-  color:#fff;
-  font-size:15px;
-  outline:none;
-  margin-bottom:12px;
+  border:1px solid #334155; background:#0b1220; color:#fff;
+  font-size:15px; outline:none; margin-bottom:12px;
   transition:border-color .2s,box-shadow .2s;
 }
-
 .room-input:focus{
   border-color:#3b82f6;
   box-shadow:0 0 0 3px rgba(59,130,246,.15);
 }
-
 .join-button{
-  width:100%;
-  padding:14px;
+  width:100%; padding:14px;
   border-radius:13px;
   background:linear-gradient(145deg,var(--app-primary),var(--app-primary-2));
-  color:#fff;
-  font-size:15px;
-  font-weight:600;
-  border:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
+  color:#fff; font-size:15px; font-weight:600; border:0;
+  display:flex; align-items:center; justify-content:center; gap:8px;
   transition:filter .15s,transform .15s;
   box-shadow:0 8px 24px rgba(37,99,235,.3);
 }
-
-.join-button:hover{filter:brightness(1.1);color:#fff;}
+.join-button:hover{filter:brightness(1.1); color:#fff;}
 .join-button:active{transform:scale(.98);}
+.join-button:disabled{opacity:.6; cursor:not-allowed;}
 
 /* =========================================================
    INFO VIDÉO
    ========================================================= */
-
 #videoInfo{
-  position:absolute;
-  z-index:7;
-  left:50%;
-  top:50%;
+  position:absolute; z-index:7;
+  left:50%; top:50%;
   transform:translate(-50%,-50%);
-  width:90%;
-  text-align:center;
-  color:#cbd5e1;
-  font-size:14px;
+  width:90%; text-align:center;
+  color:#cbd5e1; font-size:14px;
   pointer-events:none;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
 }
-
 #videoInfo i{font-size:20px;}
+
+/* =========================================================
+   BOUTON SON FLOTTANT
+   ========================================================= */
+#unmuteBtn{
+  position:absolute;
+  z-index:12;
+  left:50%; bottom:110px;
+  transform:translateX(-50%);
+  padding:11px 20px; border-radius:30px;
+  background:linear-gradient(145deg,var(--app-primary),var(--app-primary-2));
+  color:#fff; border:0;
+  font-size:13px; font-weight:600;
+  display:none; align-items:center; gap:8px;
+  box-shadow:0 10px 30px rgba(37,99,235,.45);
+  animation:bounceIn .3s ease;
+}
+#unmuteBtn:hover{filter:brightness(1.1); color:#fff;}
+#unmuteBtn.show{display:flex;}
+#unmuteBtn i{font-size:16px;}
+@keyframes bounceIn{
+  from{opacity:0; transform:translate(-50%,20px);}
+  to{opacity:1; transform:translate(-50%,0);}
+}
 
 /* =========================================================
    CONTROLS
    ========================================================= */
-
 .bottom-area{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
+  position:absolute; left:0; right:0; bottom:0;
   z-index:10;
   padding:20px 20px max(24px,env(safe-area-inset-bottom));
 }
-
 .controls{
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  display:flex; justify-content:center; align-items:center;
   gap:15px;
 }
-
-.control-wrapper{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
+.control-wrapper{display:flex; flex-direction:column; align-items:center;}
 .control{
-  width:58px;
-  height:58px;
+  width:58px; height:58px;
   border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:flex; align-items:center; justify-content:center;
   background:rgba(35,43,57,.90);
   border:1px solid var(--app-border-strong);
-  color:#fff;
-  font-size:21px;
+  color:#fff; font-size:21px;
   backdrop-filter:blur(15px);
   -webkit-backdrop-filter:blur(15px);
   box-shadow:0 8px 25px rgba(0,0,0,.25);
   transition:transform .15s,background .2s;
 }
-
-.control:hover:not(:disabled){background:rgba(51,65,85,.98);color:#fff;}
+.control:hover:not(:disabled){background:rgba(51,65,85,.98); color:#fff;}
 .control:active{transform:scale(.92);}
-.control:disabled{opacity:.42;cursor:not-allowed;}
+.control:disabled{opacity:.42; cursor:not-allowed;}
 .control.off{background:#475569 !important;}
-
 .end-call{
-  width:67px;
-  height:58px;
+  width:67px; height:58px;
   border-radius:30px;
-  background:var(--app-danger);
-  color:#fff;
-  font-size:22px;
-  border:0;
+  background:var(--app-danger); color:#fff;
+  font-size:22px; border:0;
   box-shadow:0 8px 25px rgba(239,51,64,.35);
   transition:filter .15s,transform .15s;
 }
-
-.end-call:hover{filter:brightness(1.1);color:#fff;}
+.end-call:hover{filter:brightness(1.1); color:#fff;}
 .end-call:active{transform:scale(.92);}
-.end-call:disabled{opacity:.42;cursor:not-allowed;}
-
+.end-call:disabled{opacity:.42; cursor:not-allowed;}
 .control-label{
-  display:block;
-  text-align:center;
-  font-size:9px;
-  color:#e2e8f0;
-  margin-top:6px;
-  font-weight:500;
-  letter-spacing:.3px;
-  text-transform:uppercase;
-  white-space:nowrap;
+  display:block; text-align:center;
+  font-size:9px; color:#e2e8f0;
+  margin-top:6px; font-weight:500; letter-spacing:.3px;
+  text-transform:uppercase; white-space:nowrap;
 }
 
 /* =========================================================
    RESPONSIVE
    ========================================================= */
-
 @media(min-width:700px){
-  .local-preview{width:190px;height:270px;right:28px;top:100px;}
-  .control{width:62px;height:62px;font-size:22px;}
-  .end-call{width:72px;height:62px;}
+  .local-preview{width:190px; height:270px; right:28px; top:100px;}
+  .control{width:62px; height:62px; font-size:22px;}
+  .end-call{width:72px; height:62px;}
 }
 
 @media(orientation:landscape) and (max-height:600px){
-  .top-bar{padding-top:12px;padding-bottom:10px;}
+  .top-bar{padding-top:12px; padding-bottom:10px;}
   #status{top:65px;}
-  .local-preview{top:70px;width:100px;height:125px;}
-  .bottom-area{padding-top:8px;padding-bottom:12px;}
-  .control{width:48px;height:48px;font-size:18px;}
-  .end-call{width:58px;height:48px;}
+  .local-preview{top:70px; width:100px; height:125px;}
+  .bottom-area{padding-top:8px; padding-bottom:12px;}
+  .control{width:48px; height:48px; font-size:18px;}
+  .end-call{width:58px; height:48px;}
   .control-label{display:none;}
+  #unmuteBtn{bottom:80px; padding:9px 16px; font-size:12px;}
 }
 
 @media(max-width:380px){
   .controls{gap:9px;}
-  .control{width:52px;height:52px;}
-  .end-call{width:60px;height:52px;}
+  .control{width:52px; height:52px;}
+  .end-call{width:60px; height:52px;}
 }
 </style>
 </head>
@@ -628,6 +462,12 @@ button{outline:none !important;}
     En attente du professeur...
   </div>
 
+  <!-- BOUTON ACTIVER LE SON (autoplay bloqué) -->
+  <button id="unmuteBtn">
+    <i class="bi bi-volume-up-fill"></i>
+    Activer le son
+  </button>
+
   <!-- PANNEAU DE CONNEXION -->
   <div id="joinPanel" class="join-panel">
     <h2>
@@ -646,7 +486,6 @@ button{outline:none !important;}
   <div class="bottom-area">
     <div class="controls">
 
-      <!-- MICRO -->
       <div class="control-wrapper">
         <button id="micBtn" class="control" disabled>
           <i class="bi bi-mic-fill"></i>
@@ -654,7 +493,6 @@ button{outline:none !important;}
         <span class="control-label">Micro</span>
       </div>
 
-      <!-- CAMÉRA -->
       <div class="control-wrapper">
         <button id="cameraBtn" class="control" disabled>
           <i class="bi bi-camera-video-fill"></i>
@@ -662,12 +500,10 @@ button{outline:none !important;}
         <span class="control-label">Caméra</span>
       </div>
 
-      <!-- QUITTER -->
       <button id="leaveBtn" class="end-call" disabled aria-label="Quitter">
         <i class="bi bi-telephone-x-fill"></i>
       </button>
 
-      <!-- RETOURNER -->
       <div class="control-wrapper">
         <button id="switchBtn" class="control" disabled>
           <i class="bi bi-arrow-repeat"></i>
@@ -675,7 +511,6 @@ button{outline:none !important;}
         <span class="control-label">Retourner</span>
       </div>
 
-      <!-- PARTICIPER -->
       <div class="control-wrapper">
         <button id="publishBtn" class="control" disabled>
           <i class="bi bi-broadcast"></i>
@@ -707,7 +542,6 @@ const firebaseConfig={
   messagingSenderId:"269629842962",
   appId:"1:269629842962:web:a80a12b04448fe1e595acb"
 };
-
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth();
 
@@ -738,6 +572,31 @@ async function fetchToken(roomName){
 }
 
 /* =========================================================
+   ACTIVER LE SON (débloquer autoplay)
+   ========================================================= */
+async function unmuteAll(){
+  const remoteVideo=$("remoteVideo");
+  try{
+    remoteVideo.muted=false;
+    await remoteVideo.play();
+  }catch(e){
+    console.warn("Video play bloqué:",e);
+  }
+
+  if(audioEl){
+    try{
+      audioEl.muted=false;
+      await audioEl.play();
+    }catch(e){
+      console.warn("Audio play bloqué:",e);
+    }
+  }
+
+  $("unmuteBtn").classList.remove("show");
+  status("Son activé.","ok");
+}
+
+/* =========================================================
    REJOINDRE
    ========================================================= */
 async function join(){
@@ -750,6 +609,10 @@ async function join(){
   }
   if(!user){
     status("Vous devez être connecté.","err");
+    return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    status("Caméra indisponible. Ouvrez cette page en HTTPS.","err");
     return;
   }
 
@@ -766,16 +629,26 @@ async function join(){
 
     const remoteVideo=$("remoteVideo");
 
-    // Réception des pistes
+    // ===== RÉCEPTION DES PISTES DU PROF =====
     room.on(LivekitClient.RoomEvent.TrackSubscribed,(track,publication,participant)=>{
-      console.log("Piste reçue:",track.kind,participant.identity);
+      console.log("Piste reçue:",track.kind,"de",participant.identity);
 
       if(track.kind===LivekitClient.Track.Kind.Video){
         $("waiting").style.display="none";
         $("videoInfo").style.display="none";
         track.attach(remoteVideo);
         status("Direct en cours","ok");
-        remoteVideo.play().catch(()=>{});
+
+        // Tenter l'autoplay
+        remoteVideo.muted=false;
+        remoteVideo.play().then(()=>{
+          // Autoplay réussi
+          $("unmuteBtn").classList.remove("show");
+        }).catch(()=>{
+          // Autoplay bloqué → afficher le bouton
+          remoteVideo.muted=true;
+          $("unmuteBtn").classList.add("show");
+        });
       }
 
       if(track.kind===LivekitClient.Track.Kind.Audio){
@@ -786,18 +659,25 @@ async function join(){
           document.body.appendChild(audioEl);
         }
         track.attach(audioEl);
-        audioEl.play().catch(()=>{});
+
+        // Tenter l'autoplay audio
+        audioEl.play().catch(()=>{
+          $("unmuteBtn").classList.add("show");
+        });
       }
     });
 
+    // ===== FIN DE PISTE =====
     room.on(LivekitClient.RoomEvent.TrackUnsubscribed,track=>{
       try{ track.detach(); }catch(e){}
     });
 
+    // ===== DÉCONNEXION =====
     room.on(LivekitClient.RoomEvent.Disconnected,()=>{
       status("Déconnecté du direct.","err");
     });
 
+    // ===== CONNEXION =====
     await room.connect(url,token);
     status("Connecté. En attente du professeur...","ok");
 
@@ -806,13 +686,19 @@ async function join(){
     $("leaveBtn").disabled=false;
     $("publishBtn").disabled=false;
 
-    // Pistes déjà présentes
+    // ===== PISTES DÉJÀ PRÉSENTES (si prof déjà en direct) =====
     room.remoteParticipants.forEach(participant=>{
       participant.trackPublications.forEach(pub=>{
         if(pub.track && pub.kind===LivekitClient.Track.Kind.Video){
           $("waiting").style.display="none";
           $("videoInfo").style.display="none";
           pub.track.attach(remoteVideo);
+
+          remoteVideo.muted=false;
+          remoteVideo.play().catch(()=>{
+            remoteVideo.muted=true;
+            $("unmuteBtn").classList.add("show");
+          });
         }
         if(pub.track && pub.kind===LivekitClient.Track.Kind.Audio){
           if(!audioEl){
@@ -822,6 +708,9 @@ async function join(){
             document.body.appendChild(audioEl);
           }
           pub.track.attach(audioEl);
+          audioEl.play().catch(()=>{
+            $("unmuteBtn").classList.add("show");
+          });
         }
       });
     });
@@ -875,7 +764,7 @@ async function publishCamera(){
 
   }catch(e){
     console.error(e);
-    status("Impossible d'activer la caméra.","err");
+    status("Impossible d'activer la caméra. Vérifiez les autorisations.","err");
   }
 }
 
@@ -949,6 +838,10 @@ async function leave(){
   $("localVideo").srcObject=null;
   $("localPreview").classList.remove("active");
 
+  if(audioEl){
+    try{ audioEl.srcObject=null; }catch(e){}
+  }
+
   $("leaveBtn").disabled=true;
   $("publishBtn").disabled=true;
   $("cameraBtn").disabled=true;
@@ -959,6 +852,8 @@ async function leave(){
   $("micBtn").innerHTML='<i class="bi bi-mic-fill"></i>';
   $("cameraBtn").classList.remove("off");
   $("micBtn").classList.remove("off");
+
+  $("unmuteBtn").classList.remove("show");
 
   isPublishing=false;
   currentFacingMode="user";
@@ -993,6 +888,7 @@ $("joinBtn").onclick=join;
 $("leaveBtn").onclick=leave;
 $("publishBtn").onclick=publishCamera;
 $("switchBtn").onclick=switchCamera;
+$("unmuteBtn").onclick=unmuteAll;
 
 $("cameraBtn").onclick=()=>{
   if(!room || !isPublishing) return;
