@@ -3,369 +3,1049 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>🎓 Étudiant — Direct (LiveKit)</title>
+<title>Étudiant — Direct</title>
+
+<!-- Bootstrap 5 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#fff;padding:16px}
-.wrap{max-width:900px;margin:auto}.card{background:#182235;border:1px solid #334155;border-radius:18px;padding:18px;margin-bottom:16px}
-h1{margin:0 0 8px;font-size:24px}.muted{color:#94a3b8}.row{display:flex;gap:10px;flex-wrap:wrap}
-input,button{font:inherit;border-radius:10px;padding:12px 14px}input{flex:1;min-width:220px;background:#0b1220;color:#fff;border:1px solid #475569}
-button{border:0;font-weight:700;cursor:pointer;background:#2563eb;color:#fff}button:disabled{opacity:.5;cursor:not-allowed}
-.danger{background:#dc2626}.gray{background:#475569}.green{background:#16a34a}.orange{background:#ea580c}.purple{background:#7c3aed}
-video{width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;display:block;object-fit:cover}
-.status{padding:12px;border-radius:10px;background:#243044;color:#cbd5e1;margin-top:12px}.ok{background:#12351f;color:#86efac}.err{background:#401b1b;color:#fca5a5}.wait{background:#3b2b0a;color:#fde68a}
-#app{display:none}.login{max-width:430px;margin:80px auto;text-align:center}.small{font-size:13px}
-.videoActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:700px){.grid{grid-template-columns:1fr}}
-h3{margin:0 0 10px;font-size:16px}
+:root{
+  --app-bg:#050b16;
+  --app-surface:#0d1524;
+  --app-surface-2:#131e33;
+  --app-border:rgba(255,255,255,.08);
+  --app-border-strong:rgba(255,255,255,.14);
+  --app-text:#e6edf7;
+  --app-text-muted:#8895ad;
+  --app-primary:#2563eb;
+  --app-primary-2:#4f46e5;
+  --app-success:#22c55e;
+  --app-danger:#ef3340;
+}
+
+*{
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:var(--app-bg);
+  color:var(--app-text);
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+
+button{outline:none !important;}
+
+/* =========================================================
+   CONNEXION
+   ========================================================= */
+
+#login{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:
+    radial-gradient(circle at 50% 20%,#17345d 0%,transparent 45%),
+    linear-gradient(145deg,#050b16,#0b1424 60%,#050914);
+}
+
+.login-box{
+  width:min(420px,100%);
+  text-align:center;
+  padding:38px 28px;
+  border-radius:26px;
+  background:rgba(20,31,50,.82);
+  border:1px solid var(--app-border-strong);
+  box-shadow:0 30px 80px rgba(0,0,0,.45);
+  backdrop-filter:blur(25px);
+  -webkit-backdrop-filter:blur(25px);
+}
+
+.login-icon{
+  width:72px;
+  height:72px;
+  margin:0 auto 20px;
+  border-radius:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:32px;
+  color:#fff;
+  background:linear-gradient(145deg,var(--app-primary),var(--app-primary-2));
+  box-shadow:0 12px 35px rgba(37,99,235,.35);
+}
+
+.login-box h1{
+  margin:0 0 8px;
+  font-size:24px;
+  font-weight:700;
+  letter-spacing:-.4px;
+}
+
+.login-box p{
+  margin:0 0 25px;
+  color:var(--app-text-muted);
+  font-size:14px;
+}
+
+.btn-google{
+  width:100%;
+  padding:14px 20px;
+  border-radius:14px;
+  background:#fff;
+  color:#111827;
+  font-size:15px;
+  font-weight:600;
+  border:0;
+  transition:transform .15s,box-shadow .2s;
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+}
+
+.btn-google:hover{
+  transform:translateY(-1px);
+  box-shadow:0 14px 36px rgba(0,0,0,.28);
+  color:#111827;
+}
+
+#loginError{
+  color:#fca5a5;
+  font-size:12px;
+  margin-top:14px;
+  min-height:18px;
+}
+
+/* =========================================================
+   APPLICATION
+   ========================================================= */
+
+#app{
+  display:none;
+  position:relative;
+  width:100%;
+  height:100%;
+  background:#000;
+}
+
+#remoteVideo{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  background:#070b12;
+}
+
+.video-overlay{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(to bottom,rgba(0,0,0,.58),transparent 25%),
+    linear-gradient(to top,rgba(0,0,0,.80),transparent 45%);
+}
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
+
+.top-bar{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  z-index:5;
+  padding:max(20px,env(safe-area-inset-top)) 20px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  pointer-events:none;
+}
+
+.top-left{
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+
+.app-avatar{
+  width:45px;
+  height:45px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(15,23,42,.75);
+  border:1px solid var(--app-border-strong);
+  backdrop-filter:blur(15px);
+  -webkit-backdrop-filter:blur(15px);
+  font-size:20px;
+  color:#93c5fd;
+}
+
+.room-info{
+  display:flex;
+  flex-direction:column;
+}
+
+.room-title{
+  font-size:15px;
+  font-weight:700;
+}
+
+.room-subtitle{
+  font-size:12px;
+  color:#cbd5e1;
+  margin-top:3px;
+}
+
+.live-badge{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:9px 13px;
+  border-radius:30px;
+  background:rgba(15,23,42,.70);
+  border:1px solid var(--app-border-strong);
+  backdrop-filter:blur(15px);
+  -webkit-backdrop-filter:blur(15px);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.3px;
+}
+
+.live-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--app-success);
+  box-shadow:0 0 10px var(--app-success);
+  animation:pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse{
+  0%,100%{opacity:1;}
+  50%{opacity:.4;}
+}
+
+/* =========================================================
+   STATUT
+   ========================================================= */
+
+#status{
+  position:absolute;
+  z-index:10;
+  top:82px;
+  left:50%;
+  transform:translateX(-50%);
+  max-width:90%;
+  padding:9px 16px;
+  border-radius:20px;
+  background:rgba(15,23,42,.78);
+  border:1px solid var(--app-border);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  color:#dbeafe;
+  font-size:12px;
+  text-align:center;
+  white-space:nowrap;
+  transition:color .25s;
+}
+
+#status.status.ok{color:#86efac;}
+#status.status.err{color:#fca5a5;}
+#status.status.wait{color:#fde68a;}
+
+/* =========================================================
+   VIDÉO LOCALE FLOTTANTE
+   ========================================================= */
+
+.local-preview{
+  position:absolute;
+  z-index:8;
+  right:18px;
+  top:90px;
+  width:120px;
+  height:170px;
+  border-radius:18px;
+  overflow:hidden;
+  background:#101827;
+  border:2px solid rgba(255,255,255,.22);
+  box-shadow:0 15px 40px rgba(0,0,0,.45);
+  display:none;
+}
+
+.local-preview.active{display:block;}
+
+#localVideo{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  background:#050505;
+}
+
+.preview-label{
+  position:absolute;
+  left:8px;
+  bottom:8px;
+  padding:5px 10px;
+  border-radius:8px;
+  background:rgba(0,0,0,.55);
+  font-size:10px;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+
+/* =========================================================
+   MESSAGE AVANT CONNEXION
+   ========================================================= */
+
+.waiting{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:30px;
+  background:
+    radial-gradient(circle at center,#14243d,transparent 50%),
+    #050b16;
+}
+
+.waiting-icon{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:38px;
+  color:#93c5fd;
+  background:rgba(37,99,235,.16);
+  border:1px solid rgba(96,165,250,.25);
+  margin-bottom:22px;
+}
+
+.waiting h2{
+  margin:0 0 8px;
+  font-size:21px;
+  font-weight:700;
+}
+
+.waiting p{
+  margin:0;
+  color:var(--app-text-muted);
+  max-width:320px;
+  line-height:1.5;
+  font-size:14px;
+}
+
+/* =========================================================
+   PANNEAU DE CONNEXION
+   ========================================================= */
+
+.join-panel{
+  position:absolute;
+  z-index:20;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:min(400px,calc(100% - 36px));
+  padding:26px;
+  border-radius:24px;
+  background:rgba(10,18,32,.94);
+  border:1px solid var(--app-border-strong);
+  box-shadow:0 25px 70px rgba(0,0,0,.5);
+  backdrop-filter:blur(25px);
+  -webkit-backdrop-filter:blur(25px);
+}
+
+.join-panel.hidden{display:none;}
+
+.join-panel h2{
+  margin:0 0 7px;
+  font-size:19px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.join-panel h2 i{color:#93c5fd;}
+
+.join-panel p{
+  margin:0 0 18px;
+  color:var(--app-text-muted);
+  font-size:13px;
+  line-height:1.5;
+}
+
+.room-input{
+  width:100%;
+  padding:13px 15px;
+  border-radius:13px;
+  border:1px solid #334155;
+  background:#0b1220;
+  color:#fff;
+  font-size:15px;
+  outline:none;
+  margin-bottom:12px;
+  transition:border-color .2s,box-shadow .2s;
+}
+
+.room-input:focus{
+  border-color:#3b82f6;
+  box-shadow:0 0 0 3px rgba(59,130,246,.15);
+}
+
+.join-button{
+  width:100%;
+  padding:14px;
+  border-radius:13px;
+  background:linear-gradient(145deg,var(--app-primary),var(--app-primary-2));
+  color:#fff;
+  font-size:15px;
+  font-weight:600;
+  border:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:filter .15s,transform .15s;
+  box-shadow:0 8px 24px rgba(37,99,235,.3);
+}
+
+.join-button:hover{filter:brightness(1.1);color:#fff;}
+.join-button:active{transform:scale(.98);}
+
+/* =========================================================
+   INFO VIDÉO
+   ========================================================= */
+
+#videoInfo{
+  position:absolute;
+  z-index:7;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:90%;
+  text-align:center;
+  color:#cbd5e1;
+  font-size:14px;
+  pointer-events:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+
+#videoInfo i{font-size:20px;}
+
+/* =========================================================
+   CONTROLS
+   ========================================================= */
+
+.bottom-area{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:10;
+  padding:20px 20px max(24px,env(safe-area-inset-bottom));
+}
+
+.controls{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:15px;
+}
+
+.control-wrapper{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+.control{
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(35,43,57,.90);
+  border:1px solid var(--app-border-strong);
+  color:#fff;
+  font-size:21px;
+  backdrop-filter:blur(15px);
+  -webkit-backdrop-filter:blur(15px);
+  box-shadow:0 8px 25px rgba(0,0,0,.25);
+  transition:transform .15s,background .2s;
+}
+
+.control:hover:not(:disabled){background:rgba(51,65,85,.98);color:#fff;}
+.control:active{transform:scale(.92);}
+.control:disabled{opacity:.42;cursor:not-allowed;}
+.control.off{background:#475569 !important;}
+
+.end-call{
+  width:67px;
+  height:58px;
+  border-radius:30px;
+  background:var(--app-danger);
+  color:#fff;
+  font-size:22px;
+  border:0;
+  box-shadow:0 8px 25px rgba(239,51,64,.35);
+  transition:filter .15s,transform .15s;
+}
+
+.end-call:hover{filter:brightness(1.1);color:#fff;}
+.end-call:active{transform:scale(.92);}
+.end-call:disabled{opacity:.42;cursor:not-allowed;}
+
+.control-label{
+  display:block;
+  text-align:center;
+  font-size:9px;
+  color:#e2e8f0;
+  margin-top:6px;
+  font-weight:500;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media(min-width:700px){
+  .local-preview{width:190px;height:270px;right:28px;top:100px;}
+  .control{width:62px;height:62px;font-size:22px;}
+  .end-call{width:72px;height:62px;}
+}
+
+@media(orientation:landscape) and (max-height:600px){
+  .top-bar{padding-top:12px;padding-bottom:10px;}
+  #status{top:65px;}
+  .local-preview{top:70px;width:100px;height:125px;}
+  .bottom-area{padding-top:8px;padding-bottom:12px;}
+  .control{width:48px;height:48px;font-size:18px;}
+  .end-call{width:58px;height:48px;}
+  .control-label{display:none;}
+}
+
+@media(max-width:380px){
+  .controls{gap:9px;}
+  .control{width:52px;height:52px;}
+  .end-call{width:60px;height:52px;}
+}
 </style>
 </head>
 <body>
-<div id="login" class="card login">
-<h1>🎓 Espace Étudiant</h1>
-<p class="muted">Connectez-vous avec Google pour suivre un direct.</p>
-<button id="loginBtn">🔑 Connexion Google</button>
-<div id="loginError" class="small"></div>
+
+<!-- =========================================================
+     CONNEXION
+     ========================================================= -->
+<div id="login">
+  <div class="login-box">
+    <div class="login-icon">
+      <i class="bi bi-mortarboard-fill"></i>
+    </div>
+    <h1>Espace Étudiant</h1>
+    <p>Connectez-vous pour suivre votre cours en direct.</p>
+    <button id="loginBtn" class="btn-google">
+      <i class="bi bi-google me-2"></i>Connexion avec Google
+    </button>
+    <div id="loginError"></div>
+  </div>
 </div>
 
-<div id="app" class="wrap">
-<div class="card">
-<h1>🎓 Direct de la classe (LiveKit)</h1>
-<div id="user" class="muted"></div>
+<!-- =========================================================
+     APPLICATION
+     ========================================================= -->
+<div id="app">
+
+  <video id="remoteVideo" autoplay playsinline webkit-playsinline></video>
+  <div class="video-overlay"></div>
+
+  <!-- MESSAGE D'ATTENTE -->
+  <div id="waiting" class="waiting">
+    <div class="waiting-icon">
+      <i class="bi bi-camera-video"></i>
+    </div>
+    <h2>Direct de la classe</h2>
+    <p>Rejoignez une salle pour regarder le cours du professeur.</p>
+  </div>
+
+  <!-- VIDÉO ÉTUDIANT FLOTTANTE -->
+  <div id="localPreview" class="local-preview">
+    <video id="localVideo" autoplay playsinline muted></video>
+    <div class="preview-label">
+      <i class="bi bi-person-fill"></i>
+      Vous
+    </div>
+  </div>
+
+  <!-- BARRE SUPÉRIEURE -->
+  <div class="top-bar">
+    <div class="top-left">
+      <div class="app-avatar">
+        <i class="bi bi-person-fill"></i>
+      </div>
+      <div class="room-info">
+        <div class="room-title">Direct de la classe</div>
+        <div id="user" class="room-subtitle">Étudiant</div>
+      </div>
+    </div>
+    <div class="live-badge">
+      <span class="live-dot"></span>
+      LIVE
+    </div>
+  </div>
+
+  <!-- STATUT -->
+  <div id="status" class="status">Entrez l'ID de la salle.</div>
+
+  <div id="videoInfo">
+    <i class="bi bi-hourglass-split"></i>
+    En attente du professeur...
+  </div>
+
+  <!-- PANNEAU DE CONNEXION -->
+  <div id="joinPanel" class="join-panel">
+    <h2>
+      <i class="bi bi-door-open-fill"></i>
+      Rejoindre le cours
+    </h2>
+    <p>Entrez l'identifiant communiqué par votre professeur.</p>
+    <input id="roomId" class="room-input" placeholder="ID de salle" value="cours_test" autocomplete="off">
+    <button id="joinBtn" class="join-button">
+      <i class="bi bi-play-fill"></i>
+      Rejoindre le direct
+    </button>
+  </div>
+
+  <!-- COMMANDES -->
+  <div class="bottom-area">
+    <div class="controls">
+
+      <!-- MICRO -->
+      <div class="control-wrapper">
+        <button id="micBtn" class="control" disabled>
+          <i class="bi bi-mic-fill"></i>
+        </button>
+        <span class="control-label">Micro</span>
+      </div>
+
+      <!-- CAMÉRA -->
+      <div class="control-wrapper">
+        <button id="cameraBtn" class="control" disabled>
+          <i class="bi bi-camera-video-fill"></i>
+        </button>
+        <span class="control-label">Caméra</span>
+      </div>
+
+      <!-- QUITTER -->
+      <button id="leaveBtn" class="end-call" disabled aria-label="Quitter">
+        <i class="bi bi-telephone-x-fill"></i>
+      </button>
+
+      <!-- RETOURNER -->
+      <div class="control-wrapper">
+        <button id="switchBtn" class="control" disabled>
+          <i class="bi bi-arrow-repeat"></i>
+        </button>
+        <span class="control-label">Retourner</span>
+      </div>
+
+      <!-- PARTICIPER -->
+      <div class="control-wrapper">
+        <button id="publishBtn" class="control" disabled>
+          <i class="bi bi-broadcast"></i>
+        </button>
+        <span class="control-label">Participer</span>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
-<div class="card">
-<div class="row">
-<input id="roomId" placeholder="ID de salle, ex: cours_test" autocomplete="off">
-<button id="joinBtn">▶️ Rejoindre</button>
-<button id="leaveBtn" class="danger" disabled>⏹️ Quitter</button>
-</div>
-<div id="status" class="status">Entrez l'ID de la salle.</div>
-</div>
-
-<div class="grid">
-<div class="card">
-<h3>📹 Vidéo du professeur</h3>
-<video id="remoteVideo" autoplay playsinline webkit-playsinline></video>
-<div class="videoActions">
-<button id="soundBtn" class="gray" disabled>🔊 Activer le son</button>
-</div>
-<p id="videoInfo" class="muted small">La vidéo du professeur apparaîtra ici.</p>
-</div>
-
-<div class="card">
-<h3>🎤 Ma caméra (répondre)</h3>
-<video id="localVideo" autoplay playsinline muted></video>
-<div class="videoActions">
-<button id="publishBtn" class="purple" disabled>📤 Activer ma caméra</button>
-<button id="cameraBtn" class="gray" disabled>📷 Caméra</button>
-<button id="micBtn" class="gray" disabled>🎤 Micro</button>
-<button id="switchBtn" class="orange" disabled>🔄 Retourner</button>
-</div>
-<p id="localInfo" class="muted small">Cliquez sur « Activer ma caméra » pour participer.</p>
-</div>
-</div>
-</div>
-
+<!-- =========================================================
+     SCRIPTS
+     ========================================================= -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+
 <script>
+/* =========================================================
+   FIREBASE
+   ========================================================= */
 const firebaseConfig={
- apiKey:"AIzaSyBn7VIddclO7KtrXb5sibCr9SjVLjOy-qI",
- authDomain:"theo1d.firebaseapp.com",projectId:"theo1d",
- storageBucket:"theo1d.firebasestorage.app",messagingSenderId:"269629842962",
- appId:"1:269629842962:web:a80a12b04448fe1e595acb"
+  apiKey:"AIzaSyBn7VIddclO7KtrXb5sibCr9SjVLjOy-qI",
+  authDomain:"theo1d.firebaseapp.com",
+  projectId:"theo1d",
+  storageBucket:"theo1d.firebasestorage.app",
+  messagingSenderId:"269629842962",
+  appId:"1:269629842962:web:a80a12b04448fe1e595acb"
 };
+
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth();
 
-// ===== Configuration LiveKit =====
-const TOKEN_SERVER_ID = "theo-az31wf";
+/* =========================================================
+   LIVEKIT
+   ========================================================= */
+const TOKEN_SERVER_ID="theo-az31wf";
 
-let room = null;
-let audioEl = null;
-let currentFacingMode = "user";
-let isPublishing = false;
+let room=null;
+let audioEl=null;
+let currentFacingMode="user";
+let isPublishing=false;
 
 const $=id=>document.getElementById(id);
-function status(m,t=""){ $("status").textContent=m;$("status").className="status "+t; }
-function localInfo(m,t=""){ $("localInfo").textContent=m; }
 
-// ===== Obtention du token =====
-async function fetchToken(roomName) {
-    const tokenSource = LivekitClient.TokenSource.sandboxTokenServer(TOKEN_SERVER_ID);
-    const { serverUrl, participantToken } = await tokenSource.fetch({ roomName });
-    return { token: participantToken, url: serverUrl };
+function status(message,type=""){
+  $("status").textContent=message;
+  $("status").className="status "+type;
 }
 
-// ===== Rejoindre la salle =====
+/* =========================================================
+   TOKEN
+   ========================================================= */
+async function fetchToken(roomName){
+  const tokenSource=LivekitClient.TokenSource.sandboxTokenServer(TOKEN_SERVER_ID);
+  const {serverUrl,participantToken}=await tokenSource.fetch({roomName});
+  return {token:participantToken,url:serverUrl};
+}
+
+/* =========================================================
+   REJOINDRE
+   ========================================================= */
 async function join(){
- const id = $("roomId").value.trim();
- const user = auth.currentUser;
- if(!id) return status("❌ Entrez un ID de salle.","err");
- if(!user) return status("❌ Vous devez être connecté.","err");
+  const id=$("roomId").value.trim();
+  const user=auth.currentUser;
 
- $("joinBtn").disabled = true;
- status("🔄 Demande de token LiveKit...", "wait");
+  if(!id){
+    status("Entrez l'ID de la salle.","err");
+    return;
+  }
+  if(!user){
+    status("Vous devez être connecté.","err");
+    return;
+  }
 
- try {
-   const { token, url } = await fetchToken(id);
+  $("joinBtn").disabled=true;
+  status("Connexion au direct...","wait");
 
-   room = new LivekitClient.Room({
-     adaptiveStream: true,
-     dynacast: true,
-   });
+  try{
+    const {token,url}=await fetchToken(id);
 
-   const remoteVideo = $("remoteVideo");
+    room=new LivekitClient.Room({
+      adaptiveStream:true,
+      dynacast:true
+    });
 
-   // ===== Écoute des pistes du professeur =====
-   room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
-     console.log("🎥 Piste reçue:", track.kind, "de", participant.identity);
+    const remoteVideo=$("remoteVideo");
 
-     if (track.kind === LivekitClient.Track.Kind.Video) {
-       track.attach(remoteVideo);
-       $("soundBtn").disabled = false;
-       $("videoInfo").textContent = "🟢 Vidéo du professeur affichée.";
-       status("🟢 Vidéo du professeur reçue.", "ok");
-       remoteVideo.play().catch(e => console.warn("Autoplay vidéo bloqué:", e));
-     }
+    // Réception des pistes
+    room.on(LivekitClient.RoomEvent.TrackSubscribed,(track,publication,participant)=>{
+      console.log("Piste reçue:",track.kind,participant.identity);
 
-     if (track.kind === LivekitClient.Track.Kind.Audio) {
-       if(!audioEl){
-         audioEl = document.createElement('audio');
-         audioEl.autoplay = true;
-         audioEl.style.display = 'none';
-         document.body.appendChild(audioEl);
-       }
-       track.attach(audioEl);
-       audioEl.play().catch(e => console.warn("Autoplay audio bloqué:", e));
-     }
-   });
+      if(track.kind===LivekitClient.Track.Kind.Video){
+        $("waiting").style.display="none";
+        $("videoInfo").style.display="none";
+        track.attach(remoteVideo);
+        status("Direct en cours","ok");
+        remoteVideo.play().catch(()=>{});
+      }
 
-   room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track) => {
-     try { track.detach(); } catch(e){}
-   });
-
-   room.on(LivekitClient.RoomEvent.Disconnected, () => {
-     status("⚠️ Déconnecté de la salle.", "err");
-     leave(false);
-   });
-
-   // ===== Se connecter =====
-   status("🔄 Connexion à la salle LiveKit...", "wait");
-   await room.connect(url, token);
-   console.log("✅ Connecté à la salle");
-
-   status("🟢 Connecté. En attente de la vidéo du professeur...", "ok");
-   $("leaveBtn").disabled = false;
-   $("publishBtn").disabled = false;
-   $("videoInfo").textContent = "En attente du flux vidéo du professeur...";
-
-   // Récupérer les pistes déjà publiées par le professeur
-   room.remoteParticipants.forEach(p => {
-     p.trackPublications.forEach(pub => {
-       if (pub.track && pub.kind === LivekitClient.Track.Kind.Video) {
-         pub.track.attach(remoteVideo);
-         $("soundBtn").disabled = false;
-       }
-       if (pub.track && pub.kind === LivekitClient.Track.Kind.Audio) {
-         if(!audioEl){
-           audioEl = document.createElement('audio');
-           audioEl.autoplay = true;
-           audioEl.style.display = 'none';
-           document.body.appendChild(audioEl);
-         }
-         pub.track.attach(audioEl);
-       }
-     });
-   });
-
- } catch(e) {
-   console.error("❌ Erreur join:", e);
-   status("❌ " + (e.message || "Erreur inconnue"), "err");
-   if(room){ try{ await room.disconnect(); }catch(_){} room = null; }
-   $("joinBtn").disabled = false;
-   $("leaveBtn").disabled = true;
- }
-}
-
-// ===== Activer la caméra et le micro de l'étudiant =====
-async function publishCamera(){
- if(!room) return;
- 
- try {
-   localInfo("🔄 Activation de la caméra...");
-
-   await room.localParticipant.enableCameraAndMicrophone();
-   
-   // Attacher la vidéo locale
-   const videoEl = $("localVideo");
-   const camPub = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
-   if (camPub && camPub.track) {
-     camPub.track.attach(videoEl);
-   }
-
-   // Réattacher si de nouvelles pistes sont publiées
-   room.on(LivekitClient.RoomEvent.LocalTrackPublished, (pub) => {
-     if (pub.source === LivekitClient.Track.Source.Camera && pub.track) {
-       pub.track.attach(videoEl);
-     }
-   });
-
-   isPublishing = true;
-   $("publishBtn").disabled = true;
-   $("cameraBtn").disabled = false;
-   $("micBtn").disabled = false;
-   $("switchBtn").disabled = false;
-   localInfo("🟢 Vous êtes en direct. Le professeur peut vous voir.");
-   status("🟢 Caméra et micro activés.", "ok");
-
- } catch(e) {
-   console.error("❌ Erreur publishCamera:", e);
-   localInfo("❌ Impossible d'activer la caméra : " + e.message);
- }
-}
-
-// ===== Basculer entre caméra avant / arrière =====
-async function switchCamera() {
-    if (!room || !isPublishing) return;
-    
-    const target = currentFacingMode === "user" ? "environment" : "user";
-    console.log("🔄 Bascule vers caméra:", target);
-    localInfo("🔄 Recherche d'une caméra " + (target === "user" ? "frontale" : "arrière") + "...");
-
-    try {
-        const devices = await LivekitClient.Room.getLocalDevices('videoinput');
-        
-        if (!devices || devices.length === 0) {
-            localInfo("⚠️ Aucune caméra détectée.");
-            return;
+      if(track.kind===LivekitClient.Track.Kind.Audio){
+        if(!audioEl){
+          audioEl=document.createElement("audio");
+          audioEl.autoplay=true;
+          audioEl.style.display="none";
+          document.body.appendChild(audioEl);
         }
+        track.attach(audioEl);
+        audioEl.play().catch(()=>{});
+      }
+    });
 
-        console.log("📹 Caméras disponibles:", devices.map(d => d.label || d.deviceId));
+    room.on(LivekitClient.RoomEvent.TrackUnsubscribed,track=>{
+      try{ track.detach(); }catch(e){}
+    });
 
-        let targetDevice = null;
-        const backKeywords = ["back", "rear", "arrière", "environment", "world"];
-        const frontKeywords = ["front", "face", "avant", "user", "selfie"];
+    room.on(LivekitClient.RoomEvent.Disconnected,()=>{
+      status("Déconnecté du direct.","err");
+    });
 
-        for (const device of devices) {
-            const label = (device.label || "").toLowerCase();
-            if (target === "environment") {
-                if (backKeywords.some(k => label.includes(k))) {
-                    targetDevice = device;
-                    break;
-                }
-            } else {
-                if (frontKeywords.some(k => label.includes(k))) {
-                    targetDevice = device;
-                    break;
-                }
-            }
+    await room.connect(url,token);
+    status("Connecté. En attente du professeur...","ok");
+
+    $("joinPanel").classList.add("hidden");
+    $("joinBtn").disabled=false;
+    $("leaveBtn").disabled=false;
+    $("publishBtn").disabled=false;
+
+    // Pistes déjà présentes
+    room.remoteParticipants.forEach(participant=>{
+      participant.trackPublications.forEach(pub=>{
+        if(pub.track && pub.kind===LivekitClient.Track.Kind.Video){
+          $("waiting").style.display="none";
+          $("videoInfo").style.display="none";
+          pub.track.attach(remoteVideo);
         }
-
-        if (!targetDevice) {
-            const currentPub = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
-            const currentDeviceId = currentPub?.track?.mediaStreamTrack?.getSettings()?.deviceId;
-            targetDevice = devices.find(d => d.deviceId !== currentDeviceId);
-            if (!targetDevice) targetDevice = devices[0];
+        if(pub.track && pub.kind===LivekitClient.Track.Kind.Audio){
+          if(!audioEl){
+            audioEl=document.createElement("audio");
+            audioEl.autoplay=true;
+            audioEl.style.display="none";
+            document.body.appendChild(audioEl);
+          }
+          pub.track.attach(audioEl);
         }
+      });
+    });
 
-        console.log("🎯 Caméra cible:", targetDevice.label || targetDevice.deviceId);
+  }catch(e){
+    console.error("Erreur join:",e);
+    status((e.message||"Impossible de rejoindre le direct."),"err");
+    $("joinBtn").disabled=false;
 
-        await room.switchActiveDevice('videoinput', targetDevice.deviceId);
-        
-        currentFacingMode = target;
-        localInfo("🟢 Caméra basculée vers : " + (target === "user" ? "Selfie" : "Arrière"));
-        $("switchBtn").textContent = target === "user" ? "🔄 Passer à l'arrière" : "🔄 Passer au selfie";
-
-    } catch (e) {
-        console.error("❌ Erreur switchCamera:", e);
-        localInfo("❌ Impossible de basculer : " + e.message);
+    if(room){
+      try{ await room.disconnect(); }catch(_){}
+      room=null;
     }
+  }
 }
 
-async function leave(clearUI=true){
- if(room){
-   try { await room.disconnect(); } catch(e){ console.warn(e); }
-   room = null;
- }
+/* =========================================================
+   PUBLIER CAMÉRA + MICRO
+   ========================================================= */
+async function publishCamera(){
+  if(!room) return;
 
- $("remoteVideo").srcObject = null;
- $("localVideo").srcObject = null;
- $("soundBtn").disabled = true;
- $("publishBtn").disabled = true;
- $("cameraBtn").disabled = true;
- $("micBtn").disabled = true;
- $("switchBtn").disabled = true;
- $("videoInfo").textContent = "La vidéo du professeur apparaîtra ici.";
- localInfo("Cliquez sur « Activer ma caméra » pour participer.");
- isPublishing = false;
- currentFacingMode = "user";
- $("switchBtn").textContent = "🔄 Retourner";
+  try{
+    status("Activation de votre caméra...","wait");
 
- if(clearUI){
-   $("joinBtn").disabled = false;
-   $("leaveBtn").disabled = true;
-   status("Vous avez quitté le direct.");
- }
+    await room.localParticipant.enableCameraAndMicrophone();
+
+    const video=$("localVideo");
+
+    const camPub=room.localParticipant
+      .getTrackPublication(LivekitClient.Track.Source.Camera);
+
+    if(camPub?.track){
+      camPub.track.attach(video);
+    }
+
+    room.on(LivekitClient.RoomEvent.LocalTrackPublished,pub=>{
+      if(pub.source===LivekitClient.Track.Source.Camera && pub.track){
+        pub.track.attach(video);
+      }
+    });
+
+    isPublishing=true;
+    $("localPreview").classList.add("active");
+    $("publishBtn").disabled=true;
+    $("cameraBtn").disabled=false;
+    $("micBtn").disabled=false;
+    $("switchBtn").disabled=false;
+
+    status("Vous participez au direct.","ok");
+
+  }catch(e){
+    console.error(e);
+    status("Impossible d'activer la caméra.","err");
+  }
 }
 
+/* =========================================================
+   CHANGER CAMÉRA
+   ========================================================= */
+async function switchCamera(){
+  if(!room || !isPublishing) return;
+
+  const target=currentFacingMode==="user"?"environment":"user";
+
+  try{
+    const devices=await LivekitClient.Room.getLocalDevices("videoinput");
+
+    if(!devices.length){
+      status("Aucune caméra disponible.","err");
+      return;
+    }
+
+    const currentPub=room.localParticipant
+      .getTrackPublication(LivekitClient.Track.Source.Camera);
+
+    const currentDeviceId=currentPub?.track
+      ?.mediaStreamTrack
+      ?.getSettings()
+      ?.deviceId;
+
+    let targetDevice=null;
+
+    const keywords=target==="environment"
+      ?["back","rear","arrière","environment","world"]
+      :["front","face","avant","user","selfie"];
+
+    for(const device of devices){
+      const label=(device.label||"").toLowerCase();
+      if(keywords.some(key=>label.includes(key))){
+        targetDevice=device;
+        break;
+      }
+    }
+
+    if(!targetDevice){
+      targetDevice=devices.find(d=>d.deviceId!==currentDeviceId);
+    }
+    if(!targetDevice) targetDevice=devices[0];
+
+    await room.switchActiveDevice("videoinput",targetDevice.deviceId);
+    currentFacingMode=target;
+
+    status(
+      target==="user"?"Caméra frontale activée.":"Caméra arrière activée.",
+      "ok"
+    );
+
+  }catch(e){
+    console.error(e);
+    status("Impossible de changer de caméra.","err");
+  }
+}
+
+/* =========================================================
+   QUITTER
+   ========================================================= */
+async function leave(){
+  if(room){
+    try{ await room.disconnect(); }catch(e){}
+    room=null;
+  }
+
+  $("remoteVideo").srcObject=null;
+  $("localVideo").srcObject=null;
+  $("localPreview").classList.remove("active");
+
+  $("leaveBtn").disabled=true;
+  $("publishBtn").disabled=true;
+  $("cameraBtn").disabled=true;
+  $("micBtn").disabled=true;
+  $("switchBtn").disabled=true;
+
+  $("cameraBtn").innerHTML='<i class="bi bi-camera-video-fill"></i>';
+  $("micBtn").innerHTML='<i class="bi bi-mic-fill"></i>';
+  $("cameraBtn").classList.remove("off");
+  $("micBtn").classList.remove("off");
+
+  isPublishing=false;
+  currentFacingMode="user";
+
+  $("waiting").style.display="flex";
+  $("videoInfo").style.display="flex";
+  $("videoInfo").innerHTML=
+    '<i class="bi bi-hourglass-split"></i> En attente du professeur...';
+
+  $("joinPanel").classList.remove("hidden");
+
+  status("Vous avez quitté le direct.");
+}
+
+/* =========================================================
+   CONNEXION GOOGLE
+   ========================================================= */
 $("loginBtn").onclick=async()=>{
- try{
-  const p=new firebase.auth.GoogleAuthProvider();
-  p.setCustomParameters({prompt:"select_account"});
-  await auth.signInWithPopup(p);
- }catch(e){$("loginError").textContent="❌ "+e.message;}
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:"select_account"});
+    await auth.signInWithPopup(provider);
+  }catch(e){
+    $("loginError").textContent=e.message;
+  }
 };
 
+/* =========================================================
+   BOUTONS
+   ========================================================= */
 $("joinBtn").onclick=join;
-$("leaveBtn").onclick=()=>leave(true);
+$("leaveBtn").onclick=leave;
 $("publishBtn").onclick=publishCamera;
 $("switchBtn").onclick=switchCamera;
 
 $("cameraBtn").onclick=()=>{
- if(!room || !isPublishing) return;
- const pub = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
- if(pub && pub.track){
-   pub.track.enabled = !pub.track.enabled;
-   $("cameraBtn").textContent = pub.track.enabled ? "📷 Caméra" : "📷 Caméra OFF";
- }
+  if(!room || !isPublishing) return;
+
+  const pub=room.localParticipant
+    .getTrackPublication(LivekitClient.Track.Source.Camera);
+
+  if(pub?.track){
+    pub.track.enabled=!pub.track.enabled;
+    const enabled=pub.track.enabled;
+
+    $("cameraBtn").innerHTML=enabled
+      ?'<i class="bi bi-camera-video-fill"></i>'
+      :'<i class="bi bi-camera-video-off-fill"></i>';
+    $("cameraBtn").classList.toggle("off",!enabled);
+  }
 };
+
 $("micBtn").onclick=()=>{
- if(!room || !isPublishing) return;
- const pub = room.localParticipant.getTrackPublication(LivekitClient.Track.Source.Microphone);
- if(pub && pub.track){
-   pub.track.enabled = !pub.track.enabled;
-   $("micBtn").textContent = pub.track.enabled ? "🎤 Micro" : "🎤 Micro OFF";
- }
+  if(!room || !isPublishing) return;
+
+  const pub=room.localParticipant
+    .getTrackPublication(LivekitClient.Track.Source.Microphone);
+
+  if(pub?.track){
+    pub.track.enabled=!pub.track.enabled;
+    const enabled=pub.track.enabled;
+
+    $("micBtn").innerHTML=enabled
+      ?'<i class="bi bi-mic-fill"></i>'
+      :'<i class="bi bi-mic-mute-fill"></i>';
+    $("micBtn").classList.toggle("off",!enabled);
+  }
 };
 
-$("soundBtn").onclick=async()=>{
- const video=$("remoteVideo");
- try {
-   video.muted = false;
-   await video.play();
-   $("soundBtn").textContent="🔊 Son activé";
-   status("🔊 Son du professeur activé.", "ok");
- } catch(e) {
-   status("⚠️ Appuyez encore une fois pour activer le son.", "wait");
- }
-};
-
-auth.onAuthStateChanged(u=>{
- if(u){
-  $("login").style.display="none";
-  $("app").style.display="block";
-  $("user").textContent=`Connecté : ${u.displayName||u.email}`;
- }else{
-  $("login").style.display="block";
-  $("app").style.display="none";
- }
+/* =========================================================
+   AUTH
+   ========================================================= */
+auth.onAuthStateChanged(user=>{
+  if(user){
+    $("login").style.display="none";
+    $("app").style.display="block";
+    $("user").textContent=user.displayName||user.email||"Étudiant";
+  }else{
+    $("login").style.display="flex";
+    $("app").style.display="none";
+  }
 });
 
 window.addEventListener("pagehide",()=>{
- if(room){ try{ room.disconnect(); }catch(e){} }
+  if(room){
+    try{ room.disconnect(); }catch(e){}
+  }
 });
 </script>
 </body>
