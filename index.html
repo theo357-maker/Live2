@@ -336,58 +336,6 @@ button{outline:none !important;}
   text-transform:uppercase; white-space:nowrap;
 }
 
-/* BOUTON DEMANDER CAMÉRA */
-#requestCamBtn{
-  background:linear-gradient(145deg,#f59e0b,#ef3340) !important;
-  color:#fff !important;
-}
-#requestCamBtn.pending{
-  background:linear-gradient(145deg,#475569,#334155) !important;
-  opacity:.75;
-}
-#requestCamBtn.granted{
-  background:linear-gradient(145deg,#22c55e,#16a34a) !important;
-}
-
-/* BANDEAU STATUT CAMÉRA */
-#camStatus{
-  position:absolute; z-index:9;
-  left:50%; bottom:210px;
-  transform:translateX(-50%);
-  padding:9px 16px; border-radius:22px;
-  background:rgba(15,23,42,.85);
-  border:1px solid var(--app-border-strong);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  color:#fbbf24; font-size:12px; font-weight:600;
-  display:none; align-items:center; gap:8px;
-  white-space:nowrap;
-  box-shadow:0 8px 24px rgba(0,0,0,.4);
-}
-#camStatus.show{display:flex;}
-#camStatus.granted{color:#86efac;}
-#camStatus.refused{color:#fca5a5;}
-
-/* TOAST */
-.toast-cam{
-  position:absolute; z-index:15;
-  top:82px; left:50%;
-  transform:translateX(-50%);
-  padding:11px 18px; border-radius:20px;
-  background:rgba(34,197,94,.95);
-  color:#fff; font-size:13px; font-weight:600;
-  display:none; align-items:center; gap:8px;
-  box-shadow:0 10px 30px rgba(34,197,94,.4);
-  animation:toastIn .3s ease;
-  max-width:calc(100% - 40px);
-}
-.toast-cam.show{display:flex;}
-.toast-cam.refused{background:rgba(239,51,64,.95); box-shadow:0 10px 30px rgba(239,51,64,.4);}
-@keyframes toastIn{
-  from{opacity:0; transform:translate(-50%,-15px);}
-  to{opacity:1; transform:translate(-50%,0);}
-}
-
 /* RESPONSIVE */
 @media(min-width:700px){
   .local-preview{width:190px; height:270px; right:28px; top:100px;}
@@ -403,7 +351,6 @@ button{outline:none !important;}
   .end-call{width:58px; height:48px;}
   .control-label{display:none;}
   #unmuteBtn{bottom:80px; padding:9px 16px; font-size:12px;}
-  #camStatus{bottom:150px;}
 }
 @media(max-width:380px){
   .controls{gap:9px;}
@@ -484,18 +431,6 @@ button{outline:none !important;}
     Activer le son
   </button>
 
-  <!-- TOAST DÉCISION PROF -->
-  <div id="toastCam" class="toast-cam">
-    <i class="bi bi-check-circle-fill"></i>
-    <span id="toastCamText">Accès caméra autorisé !</span>
-  </div>
-
-  <!-- BANDEAU STATUT DEMANDE CAMÉRA -->
-  <div id="camStatus">
-    <i class="bi bi-hourglass-split"></i>
-    <span id="camStatusText">En attente d'autorisation du professeur...</span>
-  </div>
-
   <!-- PANNEAU DE CONNEXION -->
   <div id="joinPanel" class="join-panel">
     <h2>
@@ -540,10 +475,10 @@ button{outline:none !important;}
       </div>
 
       <div class="control-wrapper">
-        <button id="requestCamBtn" class="control" disabled>
-          <i class="bi bi-hand-index-thumb-fill"></i>
+        <button id="publishBtn" class="control" disabled>
+          <i class="bi bi-broadcast"></i>
         </button>
-        <span class="control-label">Demander</span>
+        <span class="control-label">Participer</span>
       </div>
 
     </div>
@@ -551,6 +486,7 @@ button{outline:none !important;}
 
 </div>
 
+<!-- SCRIPTS -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
@@ -579,8 +515,6 @@ let room=null;
 let audioEl=null;
 let currentFacingMode="user";
 let isPublishing=false;
-
-let cameraRequestState="idle"; // "idle" | "pending" | "granted" | "refused"
 
 const $=id=>document.getElementById(id);
 
@@ -620,161 +554,6 @@ async function unmuteAll(){
 }
 
 /* =========================================================
-   ÉTAT DEMANDE CAMÉRA
-   ========================================================= */
-function setCamStatus(state,text){
-  const el=$("camStatus");
-  const txt=$("camStatusText");
-  const btn=$("requestCamBtn");
-
-  el.className="camStatus";
-  btn.classList.remove("pending","granted");
-
-  if(state==="pending"){
-    el.classList.add("show");
-    txt.textContent=text||"En attente d'autorisation du professeur...";
-    btn.classList.add("pending");
-    btn.innerHTML='<i class="bi bi-hourglass-split"></i>';
-    btn.disabled=true;
-  }else if(state==="granted"){
-    el.classList.add("show","granted");
-    txt.textContent=text||"Accès autorisé par le professeur";
-    btn.classList.add("granted");
-    btn.innerHTML='<i class="bi bi-camera-video-fill"></i>';
-    btn.disabled=true;
-  }else if(state==="refused"){
-    el.classList.add("show","refused");
-    txt.textContent=text||"Demande refusée par le professeur";
-    btn.innerHTML='<i class="bi bi-hand-index-thumb-fill"></i>';
-    btn.disabled=false;
-  }else{
-    el.classList.remove("show");
-    btn.innerHTML='<i class="bi bi-hand-index-thumb-fill"></i>';
-    btn.disabled=false;
-  }
-}
-
-function showToast(text,refused){
-  const t=$("toastCam");
-  $("toastCamText").textContent=text;
-  t.classList.toggle("refused",!!refused);
-  t.classList.add("show");
-  clearTimeout(showToast._t);
-  showToast._t=setTimeout(()=>t.classList.remove("show"),4500);
-}
-
-/* =========================================================
-   DEMANDER L'ACCÈS CAMÉRA
-   ========================================================= */
-async function requestCameraAccess(){
-  if(!room){
-    status("Vous devez d'abord rejoindre le direct.","err");
-    return;
-  }
-  if(cameraRequestState==="pending"){
-    status("Demande déjà envoyée.","wait");
-    return;
-  }
-  if(cameraRequestState==="granted"){
-    status("Accès déjà autorisé.","ok");
-    return;
-  }
-
-  try{
-    const payload=new TextEncoder().encode(JSON.stringify({
-      type:"camera-request"
-    }));
-
-    await room.localParticipant.publishData(payload,{reliable:true});
-
-    cameraRequestState="pending";
-    setCamStatus("pending","Demande envoyée au professeur...");
-    status("Demande d'accès envoyée.","wait");
-
-  }catch(e){
-    console.error(e);
-    status("Impossible d'envoyer la demande.","err");
-  }
-}
-
-/* =========================================================
-   PUBLIER CAMÉRA (après autorisation prof)
-   ========================================================= */
-async function publishCameraNow(){
-  if(!room || isPublishing) return;
-
-  try{
-    status("Activation de votre caméra...","wait");
-
-    await room.localParticipant.enableCameraAndMicrophone({
-      camera:{
-        resolution:LivekitClient.VideoPresets.h360.resolution,
-        facingMode:"user"
-      },
-      microphone:{
-        echoCancellation:true,
-        noiseSuppression:true,
-        autoGainControl:true
-      }
-    });
-
-    const video=$("localVideo");
-    const camPub=room.localParticipant
-      .getTrackPublication(LivekitClient.Track.Source.Camera);
-
-    if(camPub?.track){
-      camPub.track.attach(video);
-      video.play().catch(()=>{});
-    }
-
-    room.on(LivekitClient.RoomEvent.LocalTrackPublished,pub=>{
-      if(pub.source===LivekitClient.Track.Source.Camera && pub.track){
-        pub.track.attach(video);
-        video.play().catch(()=>{});
-      }
-    });
-
-    isPublishing=true;
-    $("localPreview").classList.add("active");
-    $("cameraBtn").disabled=false;
-    $("switchBtn").disabled=false;
-    $("requestCamBtn").disabled=true;
-
-    setCamStatus("granted","Vous diffusez votre caméra");
-    status("Vous participez au direct.","ok");
-
-  }catch(e){
-    console.error(e);
-    status("Impossible d'activer la caméra.","err");
-  }
-}
-
-/* =========================================================
-   DÉCISION DU PROF
-   ========================================================= */
-function handleProfDecision(granted){
-  if(granted){
-    cameraRequestState="granted";
-    setCamStatus("granted","Accès autorisé !");
-    showToast("Accès caméra autorisé ! Le professeur vous voit.",false);
-    status("Le professeur a accepté. Activation de votre caméra...","ok");
-    publishCameraNow();
-  }else{
-    cameraRequestState="refused";
-    setCamStatus("refused","Demande refusée par le professeur");
-    showToast("Le professeur a refusé votre demande.",true);
-    status("Demande refusée.","err");
-    // Autoriser à re-demander après 3s
-    setTimeout(()=>{
-      if(cameraRequestState==="refused"){
-        cameraRequestState="idle";
-        setCamStatus("idle");
-      }
-    },3000);
-  }
-}
-
-/* =========================================================
    REJOINDRE
    ========================================================= */
 async function join(){
@@ -811,7 +590,7 @@ async function join(){
 
     const remoteVideo=$("remoteVideo");
 
-    /* RÉCEPTION DES PISTES DU PROF */
+    // RÉCEPTION DES PISTES DU PROF
     room.on(LivekitClient.RoomEvent.TrackSubscribed,(track,publication,participant)=>{
       console.log("Piste reçue:",track.kind,"de",participant.identity);
 
@@ -821,6 +600,7 @@ async function join(){
         track.attach(remoteVideo);
         status("Direct en cours","ok");
 
+        // Tenter l'autoplay
         remoteVideo.muted=false;
         remoteVideo.play().then(()=>{
           $("unmuteBtn").classList.remove("show");
@@ -853,22 +633,10 @@ async function join(){
       status("Déconnecté du direct.","err");
     });
 
+    // Surveiller la qualité réseau
     room.on(LivekitClient.RoomEvent.ConnectionQualityChanged,(quality,participant)=>{
       if(participant===room.localParticipant && quality==="poor"){
-        status("Connexion faible — la qualité s'adapte automatiquement.","wait");
-      }
-    });
-
-    /* DÉCISION DU PROF */
-    room.on(LivekitClient.RoomEvent.DataReceived,(payload,participant)=>{
-      try{
-        const msg=JSON.parse(new TextDecoder().decode(payload));
-        console.log("Data reçue:",msg);
-        if(msg.type==="camera-decision"){
-          handleProfDecision(!!msg.granted);
-        }
-      }catch(e){
-        // Data non-JSON ignorée
+        status("Connexion faible — la qualité vidéo s'adapte automatiquement.","wait");
       }
     });
 
@@ -878,37 +646,9 @@ async function join(){
     $("joinPanel").classList.add("hidden");
     $("joinBtn").disabled=false;
     $("leaveBtn").disabled=false;
-    $("requestCamBtn").disabled=false;
+    $("publishBtn").disabled=false;
 
-    /* AUDIO ACTIVÉ PAR DÉFAUT, CAMÉRA NON */
-    try{
-      await room.localParticipant.enableMicrophone({
-        echoCancellation:true,
-        noiseSuppression:true,
-        autoGainControl:true
-      });
-      console.log("Micro activé par défaut");
-      $("micBtn").disabled=false;
-      $("micBtn").innerHTML='<i class="bi bi-mic-fill"></i>';
-      $("micBtn").classList.remove("off");
-    }catch(e){
-      console.warn("Micro non activé:",e);
-      $("micBtn").disabled=false;
-      $("micBtn").innerHTML='<i class="bi bi-mic-mute-fill"></i>';
-      $("micBtn").classList.add("off");
-    }
-
-    // Caméra non publiée pour l'instant
-    $("cameraBtn").disabled=true;
-    $("cameraBtn").innerHTML='<i class="bi bi-camera-video-off-fill"></i>';
-    $("cameraBtn").classList.add("off");
-    $("switchBtn").disabled=true;
-
-    cameraRequestState="idle";
-    setCamStatus("idle");
-    $("requestCamBtn").disabled=false;
-
-    /* PISTES DÉJÀ PRÉSENTES (si prof déjà en direct) */
+    // PISTES DÉJÀ PRÉSENTES (si prof déjà en direct)
     room.remoteParticipants.forEach(participant=>{
       participant.trackPublications.forEach(pub=>{
         if(pub.track && pub.kind===LivekitClient.Track.Kind.Video){
@@ -946,6 +686,59 @@ async function join(){
       try{ await room.disconnect(); }catch(_){}
       room=null;
     }
+  }
+}
+
+/* =========================================================
+   PUBLIER CAMÉRA + MICRO (étudiant : basse résolution)
+   ========================================================= */
+async function publishCamera(){
+  if(!room) return;
+
+  try{
+    status("Activation de votre caméra...","wait");
+
+    await room.localParticipant.enableCameraAndMicrophone({
+      camera:{
+        resolution:LivekitClient.VideoPresets.h360.resolution,
+        facingMode:"user"
+      },
+      microphone:{
+        echoCancellation:true,
+        noiseSuppression:true,
+        autoGainControl:true
+      }
+    });
+
+    const video=$("localVideo");
+
+    const camPub=room.localParticipant
+      .getTrackPublication(LivekitClient.Track.Source.Camera);
+
+    if(camPub?.track){
+      camPub.track.attach(video);
+      video.play().catch(()=>{});
+    }
+
+    room.on(LivekitClient.RoomEvent.LocalTrackPublished,pub=>{
+      if(pub.source===LivekitClient.Track.Source.Camera && pub.track){
+        pub.track.attach(video);
+        video.play().catch(()=>{});
+      }
+    });
+
+    isPublishing=true;
+    $("localPreview").classList.add("active");
+    $("publishBtn").disabled=true;
+    $("cameraBtn").disabled=false;
+    $("micBtn").disabled=false;
+    $("switchBtn").disabled=false;
+
+    status("Vous participez au direct.","ok");
+
+  }catch(e){
+    console.error(e);
+    status("Impossible d'activer la caméra. Vérifiez les autorisations.","err");
   }
 }
 
@@ -1007,16 +800,6 @@ async function switchCamera(){
    QUITTER
    ========================================================= */
 async function leave(){
-  // Prévenir le prof qu'on annule une éventuelle demande
-  if(room && cameraRequestState==="pending"){
-    try{
-      const payload=new TextEncoder().encode(JSON.stringify({
-        type:"camera-cancelled"
-      }));
-      await room.localParticipant.publishData(payload,{reliable:true});
-    }catch(e){}
-  }
-
   if(room){
     try{ await room.disconnect(); }catch(e){}
     room=null;
@@ -1031,7 +814,7 @@ async function leave(){
   }
 
   $("leaveBtn").disabled=true;
-  $("requestCamBtn").disabled=true;
+  $("publishBtn").disabled=true;
   $("cameraBtn").disabled=true;
   $("micBtn").disabled=true;
   $("switchBtn").disabled=true;
@@ -1042,10 +825,8 @@ async function leave(){
   $("micBtn").classList.remove("off");
 
   $("unmuteBtn").classList.remove("show");
-  $("camStatus").classList.remove("show");
 
   isPublishing=false;
-  cameraRequestState="idle";
   currentFacingMode="user";
 
   $("waiting").style.display="flex";
@@ -1076,11 +857,10 @@ $("loginBtn").onclick=async()=>{
    ========================================================= */
 $("joinBtn").onclick=join;
 $("leaveBtn").onclick=leave;
-$("requestCamBtn").onclick=requestCameraAccess;
+$("publishBtn").onclick=publishCamera;
 $("switchBtn").onclick=switchCamera;
 $("unmuteBtn").onclick=unmuteAll;
 
-/* CAMÉRA ON/OFF (une fois publiée) */
 $("cameraBtn").onclick=()=>{
   if(!room || !isPublishing) return;
   const pub=room.localParticipant
@@ -1095,9 +875,8 @@ $("cameraBtn").onclick=()=>{
   }
 };
 
-/* MICRO ON/OFF */
 $("micBtn").onclick=()=>{
-  if(!room) return;
+  if(!room || !isPublishing) return;
   const pub=room.localParticipant
     .getTrackPublication(LivekitClient.Track.Source.Microphone);
   if(pub?.track){
